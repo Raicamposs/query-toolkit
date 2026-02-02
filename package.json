@@ -1,0 +1,38 @@
+{
+  "name": "@raicamposs/query-toolkit",
+  "version": "1.0.0",
+  "description": "Pacote de ferramentas para queries. RSQL, filtros, paginação e ordenação.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "version": "npm version patch",
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@raicamposs/toolkit": "^1.0.8",
+    "zod": "^4.3.6"
+  }
+}
