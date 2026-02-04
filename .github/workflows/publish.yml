@@ -3,12 +3,14 @@ name: Publish Package to npmjs
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
       id-token: write
 
     steps:
@@ -18,7 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
-          registry-url: "https://registry.npmjs.org"
+          registry-url: "https://npm.pkg.github.com"
           scope: "@raicamposs"
           always-auth: true
 
@@ -29,30 +31,12 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm test -- --run
 
       - name: Build package
         run: npm run build
 
-      - name: Configure npm auth
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "${NPM_TOKEN}" ]; then
-            echo "FALHA: segredo NPM_TOKEN não definido. Defina secrets.NPM_TOKEN no repositório." >&2
-            exit 1
-          fi
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          # garante permissão apenas para o arquivo do runner
-          chmod 0600 ~/.npmrc
-
-      - name: Debug npm (whoami / config)
-        run: |
-          npm whoami --registry https://registry.npmjs.org || true
-          npm config get registry
-          cat ~/.npmrc
-
       - name: Publish to npm
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --access public

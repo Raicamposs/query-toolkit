@@ -9,7 +9,7 @@ export class QueryParamsParse<T = any> {
   build(): Record<string, Array<QueryParamsOperator>> {
     const output: Record<string, Array<QueryParamsOperator>> = {};
 
-    const operator = ObjectEntries(coalesce(this.params, {})).reduce((acc, [key, value]) => {
+    ObjectEntries(coalesce(this.params, {})).reduce((acc, [key, value]) => {
       if (isEmpty(value)) return acc;
       if (isEmpty(key)) return acc;
 
