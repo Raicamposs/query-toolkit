@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ClauseILike } from './clause-ilike';
+import { ClauseILike } from './clause-Ilike';
 
 describe('ClauseILike', () => {
   describe('build', () => {

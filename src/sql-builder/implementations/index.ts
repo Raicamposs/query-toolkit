@@ -9,7 +9,7 @@ export * from './clause-exists';
 export * from './clause-exists-base';
 export * from './clause-greater-than';
 export * from './clause-greater-than-or-equals';
-export * from './clause-ilike';
+export * from './clause-Ilike';
 export * from './clause-in';
 export * from './clause-less-than';
 export * from './clause-less-than-or-equals';
