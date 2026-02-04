@@ -3,11 +3,18 @@ import { z } from 'zod';
 import { DateRsqlRegex } from './date-regex';
 
 /**
- * Centralized utility for parsing RSQL date strings
+ * Centralized utility for parsing RSQL values (dates, numbers, strings)
  */
-export function parseRsqlDate(value: string): string | Date {
+export function parseRsqlValue(value: string): string | number | Date {
   if (isNullOrUndefined(value)) return value;
 
+  // Try parsing as number
+  if (/^-?\d+(\.\d+)?$/.test(value)) {
+    const num = Number(value);
+    if (!isNaN(num)) return num;
+  }
+
+  // Try parsing as date
   if (DateRsqlRegex.test(value)) {
     try {
       return z.coerce.date().parse(value);
@@ -18,3 +25,8 @@ export function parseRsqlDate(value: string): string | Date {
 
   return value;
 }
+
+/**
+ * @deprecated Use parseRsqlValue instead
+ */
+export const parseRsqlDate = parseRsqlValue;

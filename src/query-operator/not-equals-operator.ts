@@ -1,7 +1,7 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { z } from 'zod';
-import type { OperatorVisitor } from '../converters/operator-visitor';
-import { BoolSchema, DateSchema, NumberSchema, RsqlCondition, StringSchema } from '../types';
+import { parseRsqlValue } from '../common/date-parser';
+import { OperatorVisitor } from '../converters';
+import { RsqlCondition } from '../types';
 import { QueryParamsOperator } from './query-params-operator';
 
 export class NotEqualsOperator extends QueryParamsOperator {
@@ -10,8 +10,7 @@ export class NotEqualsOperator extends QueryParamsOperator {
   }
 
   value() {
-    const Schema = z.union([StringSchema, BoolSchema, DateSchema, NumberSchema]);
-    return Schema.parse(this.getRawValue());
+    return parseRsqlValue(this.getRawValue()) as any;
   }
 
   query(): Nullable<RsqlCondition> {

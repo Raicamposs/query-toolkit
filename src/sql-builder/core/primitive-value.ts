@@ -19,13 +19,7 @@ export type PrimitiveValueTypes = string | boolean | number | Date;
  * new PrimitiveValue(123).toSql()       // Returns: 123
  */
 export class PrimitiveValue {
-  // Static formatter to avoid recreation on every call
-  private static readonly DATE_FORMATTER = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+
 
   // SQL Injection Protection Patterns
   private static readonly QUOTE_REGEX = /'/g;
@@ -35,7 +29,7 @@ export class PrimitiveValue {
   constructor(
     private readonly value: Nullable<PrimitiveValueTypes>,
     private readonly valueTransform?: TransformFunction
-  ) {}
+  ) { }
 
   /**
    * Converts the value to a SQL-safe string with injection protection
@@ -107,7 +101,7 @@ export class PrimitiveValue {
    * Date objects are inherently safe from SQL injection
    */
   private formatDate(date: Date): string {
-    const formattedDate = PrimitiveValue.DATE_FORMATTER.format(date);
+    const formattedDate = date.toISOString().split('T')[0];
     return `'${formattedDate}'`;
   }
 

@@ -1,7 +1,7 @@
 import { Nullable } from '@raicamposs/toolkit';
-import z from 'zod';
-import type { OperatorVisitor } from '../converters/operator-visitor';
-import { BoolSchema, DateSchema, NumberSchema, RsqlCondition, StringSchema } from '../types';
+import { parseRsqlValue } from '../common/date-parser';
+import { OperatorVisitor } from '../converters';
+import { RsqlCondition } from '../types';
 import { QueryParamsOperator } from './query-params-operator';
 
 export class NotInOperator extends QueryParamsOperator {
@@ -10,16 +10,11 @@ export class NotInOperator extends QueryParamsOperator {
   }
 
   value() {
-    const filters = this.getRawValue()
+    return this.getRawValue()
       .split(',')
       .map((item) => item.trim())
-      .filter((item) => item !== '');
-
-    const data = z
-      .union([BoolSchema, NumberSchema, DateSchema, StringSchema])
-      .array()
-      .parse(filters);
-    return data;
+      .filter((item) => item !== '')
+      .map((item) => parseRsqlValue(item) as any);
   }
 
   query(): Nullable<RsqlCondition> {

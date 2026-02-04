@@ -12,7 +12,7 @@ import type { LessThanOrEqualOperator } from '../query-operator/less-than-or-equ
 import type { NotContainsOperator } from '../query-operator/not-contains-operator';
 import type { NotEqualsOperator } from '../query-operator/not-equals-operator';
 import type { NotInOperator } from '../query-operator/not-in-operator';
-import type { UnknownOperator } from '../query-operator/unknow-operator';
+import type { UnknownOperator } from '../query-operator/unknown-operator';
 
 /**
  * Visitor interface for converting QueryParamsOperator to different formats

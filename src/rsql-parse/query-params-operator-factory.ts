@@ -15,10 +15,10 @@ import {
   NotInOperator,
   QueryParamsOperator,
 } from '../query-operator';
-import { UnknownOperator } from '../query-operator/unknow-operator';
+import { UnknownOperator } from '../query-operator/unknown-operator';
 
 export class QueryParamsOperatorFactory {
-  constructor(private readonly params: string) {}
+  constructor(private readonly params: string) { }
 
   build(): QueryParamsOperator {
     switch (true) {

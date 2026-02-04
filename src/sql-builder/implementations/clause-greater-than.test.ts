@@ -29,13 +29,13 @@ describe('ClauseGreaterThan', () => {
       it('should generate greater than clause for date', () => {
         const date = new Date('2024-01-15T10:30:00Z');
         const clause = new ClauseGreaterThan('created_at', date);
-        expect(clause.build()).toBe("created_at > '15/01/2024'");
+        expect(clause.build()).toBe("created_at > '2024-01-15'");
       });
 
       it('should handle date at year boundary', () => {
         const date = new Date('2024-12-31T23:59:59Z');
         const clause = new ClauseGreaterThan('created_at', date);
-        expect(clause.build()).toBe("created_at > '31/12/2024'");
+        expect(clause.build()).toBe("created_at > '2024-12-31'");
       });
     });
 

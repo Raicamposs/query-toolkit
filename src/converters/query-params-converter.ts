@@ -1,5 +1,6 @@
-import type { QueryParamsOperator } from '../query-operator/query-params-operator';
+import { QueryParamsOperator } from '../query-operator';
 import type { Clause } from '../sql-builder/core/clause';
+import { QueryableFields } from '../types';
 import { ClauseVisitor } from './clause-visitor';
 import { OperatorVisitor } from './operator-visitor';
 import { PrismaVisitor } from './prisma-visitor';
@@ -7,10 +8,12 @@ import { PrismaVisitor } from './prisma-visitor';
 /**
  * Helper class to convert multiple QueryParamsOperator instances to different formats
  */
-export class QueryParamsConverter {
+export class QueryParamsConverter<T = any> {
   constructor(
-    private readonly operators: Record<string, QueryParamsOperator | QueryParamsOperator[]>
-  ) {}
+    private readonly operators: Partial<
+      Record<QueryableFields<T>, QueryParamsOperator | QueryParamsOperator[]>
+    >
+  ) { }
 
   /**
    * Converts operators using the provided visitor
@@ -42,8 +45,15 @@ export class QueryParamsConverter {
         Object.assign(result, clauses[0]);
       } else {
         // Find the specific field value to merge
-        const mergedValues = Object.assign({}, ...clauses.map((c) => c[field]));
-        result[field] = mergedValues;
+        const values = clauses.map((c) => c[field]);
+        const allObjects = values.every((v) => typeof v === 'object' && v !== null && !Array.isArray(v));
+
+        if (allObjects) {
+          result[field] = Object.assign({}, ...values);
+        } else {
+          // If not all are objects, last one wins (simple override)
+          result[field] = values[values.length - 1];
+        }
       }
     }
 

@@ -132,3 +132,82 @@ describe('Date Param Schema', () => {
     expect(() => DateParamSchema.parse(value)).toThrowError();
   });
 });
+
+import { CustomDateParamSchema, DateSchema } from './date-params';
+
+describe('DateSchema', () => {
+  it('should parse Flutter-style date strings', () => {
+    const flutterDate = '2024-05-20 15:30:45.123';
+    const parsed = DateSchema.parse(flutterDate);
+    expect(parsed).toBeInstanceOf(Date);
+    expect(parsed.getFullYear()).toBe(2024);
+    expect(parsed.getMonth()).toBe(4); // Maio
+    expect(parsed.getDate()).toBe(20);
+  });
+
+  it('should fail for invalid February date', () => {
+    expect(() => DateSchema.parse('2024-02-30')).toThrow();
+  });
+
+  it('should parse standard ISO date string', () => {
+    const isoDate = '2024-05-20T15:30:45.123Z';
+    const parsed = DateSchema.parse(isoDate);
+    expect(parsed.toISOString()).toBe(isoDate);
+  });
+
+  it('should fail for invalid February datetime', () => {
+    expect(() => DateSchema.parse('2024-02-30T10:00:00')).toThrow();
+  });
+
+  it('should fail for date before 1900', () => {
+    expect(() => DateSchema.parse('1899-12-31')).toThrow();
+  });
+});
+
+describe('CustomDateParamSchema', () => {
+  it('should parse with gte and lte', () => {
+    const value = {
+      gte: new Date('2024-01-01'),
+      lte: new Date('2024-01-02'),
+    };
+    expect(CustomDateParamSchema.parse(value)).toEqual(value);
+  });
+
+  it('should parse with gt and lt', () => {
+    const value = {
+      gt: new Date('2024-01-01'),
+      lt: new Date('2024-01-02'),
+    };
+    expect(CustomDateParamSchema.parse(value)).toEqual(value);
+  });
+
+  it('should fail if start is greater than end', () => {
+    const value = {
+      gte: new Date('2024-01-02'),
+      lte: new Date('2024-01-01'),
+    };
+    expect(() => CustomDateParamSchema.parse(value)).toThrow();
+  });
+
+  it('should fail if missing start or end', () => {
+    expect(() => CustomDateParamSchema.parse({ gte: new Date() })).toThrow();
+    expect(() => CustomDateParamSchema.parse({ lte: new Date() })).toThrow();
+    expect(() => CustomDateParamSchema.parse({})).toThrow();
+  });
+
+  it('should handle gt and lte combination', () => {
+    const value = {
+      gt: new Date('2024-01-01'),
+      lte: new Date('2024-01-02'),
+    };
+    expect(CustomDateParamSchema.parse(value)).toEqual(value);
+  });
+
+  it('should handle gte and lt combination', () => {
+    const value = {
+      gte: new Date('2024-01-01'),
+      lt: new Date('2024-01-02'),
+    };
+    expect(CustomDateParamSchema.parse(value)).toEqual(value);
+  });
+});

@@ -45,7 +45,7 @@ export class ClauseCondition extends Clause {
       })
       .filter((value) => !isEmpty(value))
       .map((value) => `(${value})`)
-      .join(' and ');
+      .join(' AND ');
 
     if (isEmpty(output)) return undefined;
     return output;
@@ -62,17 +62,13 @@ export class ClauseCondition extends Clause {
         return `${this.field} <> ${value}`;
 
       case 'notContains': {
-        if (isNaN(+value)) {
-          return `not ${this.field} ilike ${value}`;
-        }
-        return `not ${this.field} ilike '${value}'`;
+        const rawValue = String(value).replace(/^'|'$/g, '');
+        return `not ${this.field} ilike '%${rawValue}%'`;
       }
 
       case 'contains': {
-        if (isNaN(+value)) {
-          return `${this.field} ilike ${value}`;
-        }
-        return `${this.field} ilike '${value}'`;
+        const rawValue = String(value).replace(/^'|'$/g, '');
+        return `${this.field} ilike '%${rawValue}%'`;
       }
 
       case 'in':

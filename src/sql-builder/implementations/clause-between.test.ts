@@ -30,13 +30,13 @@ describe('ClauseBetween', () => {
         const start = new Date('2024-01-01T00:00:00Z');
         const end = new Date('2024-12-31T23:59:59Z');
         const clause = new ClauseBetween('created_at', start, end);
-        expect(clause.build()).toBe("created_at BETWEEN '01/01/2024' AND '31/12/2024'");
+        expect(clause.build()).toBe("created_at BETWEEN '2024-01-01' AND '2024-12-31'");
       });
 
       it('should handle same date for start and end', () => {
         const date = new Date('2024-06-15T12:00:00Z');
         const clause = new ClauseBetween('event_date', date, date);
-        expect(clause.build()).toBe("event_date BETWEEN '15/06/2024' AND '15/06/2024'");
+        expect(clause.build()).toBe("event_date BETWEEN '2024-06-15' AND '2024-06-15'");
       });
     });
 

@@ -29,13 +29,13 @@ describe('ClauseGreaterThanOrEquals', () => {
       it('should generate greater than or equals clause for date', () => {
         const date = new Date('2024-01-01T00:00:00Z');
         const clause = new ClauseGreaterThanOrEquals('created_at', date);
-        expect(clause.build()).toBe("created_at >= '01/01/2024'");
+        expect(clause.build()).toBe("created_at >= '2024-01-01'");
       });
 
       it('should handle date boundaries', () => {
         const date = new Date('2024-12-31T23:59:59Z');
         const clause = new ClauseGreaterThanOrEquals('expires_at', date);
-        expect(clause.build()).toBe("expires_at >= '31/12/2024'");
+        expect(clause.build()).toBe("expires_at >= '2024-12-31'");
       });
     });
 

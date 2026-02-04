@@ -2,8 +2,10 @@ export * from './array-param';
 export * from './base-params';
 export * from './bool-params';
 export * from './date-params';
+export * from './entity-fields';
 export * from './number-params';
 export * from './rsql-condition';
 export * from './serial-params';
 export * from './string-params';
 export * from './uuid-params';
+

@@ -13,4 +13,3 @@ export * from './not-contains-operator';
 export * from './not-equals-operator';
 export * from './not-in-operator';
 export * from './query-params-operator';
-export * from './rsql-operator-factory';

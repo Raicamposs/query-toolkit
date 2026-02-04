@@ -1,5 +1,5 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { parseRsqlDate } from '../common/date-parser';
+import { parseRsqlValue } from '../common/date-parser';
 import type { OperatorVisitor } from '../converters/operator-visitor';
 import { RsqlCondition } from '../types';
 import { QueryParamsOperator } from './query-params-operator';
@@ -10,7 +10,7 @@ export class LessThanOperator extends QueryParamsOperator {
   }
 
   value() {
-    return parseRsqlDate(this.getRawValue());
+    return parseRsqlValue(this.getRawValue());
   }
 
   query(): Nullable<RsqlCondition> {

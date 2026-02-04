@@ -1,9 +1,10 @@
 import { coalesce, isEmpty, ObjectEntries } from '@raicamposs/toolkit';
 import { QueryParamsOperator } from '../query-operator';
+import { RsqlQueryParams } from '../types';
 import { QueryParamsOperatorFactory } from './query-params-operator-factory';
 
-export class QueryParamsParse {
-  constructor(private readonly params: Record<string, string>) {}
+export class QueryParamsParse<T = any> {
+  constructor(private readonly params: RsqlQueryParams<T>) { }
 
   build(): Record<string, Array<QueryParamsOperator>> {
     const output: Record<string, Array<QueryParamsOperator>> = {};
@@ -22,10 +23,10 @@ export class QueryParamsParse {
         });
         return acc;
       }
-      acc[key] = [new QueryParamsOperatorFactory(value).build()];
+      acc[key] = [new QueryParamsOperatorFactory(value as string).build()];
       return acc;
     }, output);
 
-    return operator;
+    return output;
   }
 }

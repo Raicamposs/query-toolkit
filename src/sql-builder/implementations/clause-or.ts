@@ -19,7 +19,7 @@ export class ClauseOr extends Clause {
     const where = this.value
       .map((clause) => clause.build())
       .filter((clause) => isEmpty(clause) === false)
-      .join(' or ');
+      .join(' OR ');
 
     if (isEmpty(where)) {
       return undefined;

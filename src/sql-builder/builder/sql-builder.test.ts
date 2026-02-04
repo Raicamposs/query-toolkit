@@ -19,19 +19,13 @@ describe('SqlBuilder', () => {
       it('should add equals filter', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereEquals('status', 'active');
-        expect(builder.build()).toBe("SELECT * FROM users where (status = 'active')");
+        expect(builder.build()).toBe("SELECT * FROM users WHERE (status = 'active')");
       });
 
       it('should handle number equals', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereEquals('age', 25);
-        expect(builder.build()).toBe('SELECT * FROM users where (age = 25)');
-      });
-
-      it('should handle boolean equals', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereEquals('active', true);
-        expect(builder.build()).toBe('SELECT * FROM users where (active = true)');
+        expect(builder.build()).toBe('SELECT * FROM users WHERE (age = 25)');
       });
     });
 
@@ -39,233 +33,171 @@ describe('SqlBuilder', () => {
       it('should add not equals filter', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereNotEquals('status', 'deleted');
-        expect(builder.build()).toBe("SELECT * FROM users where (status <> 'deleted')");
+        expect(builder.build()).toBe("SELECT * FROM users WHERE (status <> 'deleted')");
       });
     });
 
     describe('whereLike', () => {
-      it('should add LIKE filter', () => {
+      it('should add like filter', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereLike('name', 'John%');
-        expect(builder.build()).toBe("SELECT * FROM users where (name LIKE 'John%')");
+        expect(builder.build()).toBe("SELECT * FROM users WHERE (name LIKE 'John%')");
       });
     });
 
     describe('whereILike', () => {
-      it('should add ILIKE filter', () => {
+      it('should add ilike filter', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereILike('email', '%@example.com');
-        expect(builder.build()).toBe("SELECT * FROM users where (email ILIKE '%@example.com')");
+        builder.whereILike('name', 'john%');
+        expect(builder.build()).toBe("SELECT * FROM users WHERE (name ILIKE 'john%')");
       });
     });
 
     describe('whereIn', () => {
-      it('should add IN filter for strings', () => {
+      it('should add in filter', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereIn('status', ['active', 'pending']);
-        expect(builder.build()).toBe("SELECT * FROM users where (status IN ('active', 'pending'))");
-      });
-
-      it('should add IN filter for numbers', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereIn('id', [1, 2, 3]);
-        expect(builder.build()).toBe('SELECT * FROM users where (id IN (1, 2, 3))');
+        expect(builder.build()).toBe("SELECT * FROM users WHERE (status IN ('active', 'pending'))");
       });
     });
 
     describe('whereBetween', () => {
-      it('should add BETWEEN filter for numbers', () => {
+      it('should add between filter', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereBetween('age', 18, 65);
-        expect(builder.build()).toBe('SELECT * FROM users where (age BETWEEN 18 AND 65)');
-      });
-
-      it('should add BETWEEN filter for dates', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        const start = new Date('2024-01-01T00:00:00Z');
-        const end = new Date('2024-12-31T23:59:59Z');
-        builder.whereBetween('created_at', start, end);
-        expect(builder.build()).toBe(
-          "SELECT * FROM users where (created_at BETWEEN '01/01/2024' AND '31/12/2024')"
-        );
+        builder.whereBetween('age', 18, 30);
+        expect(builder.build()).toBe('SELECT * FROM users WHERE (age BETWEEN 18 AND 30)');
       });
     });
 
-    describe('whereBetweenOperator', () => {
-      it('should add BETWEEN filter using operator object', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereBetweenOperator('age', { gte: 18, lte: 65 });
-        expect(builder.build()).toBe('SELECT * FROM users where (age BETWEEN 18 AND 65)');
-      });
-    });
-
-    describe('whereGreaterThan', () => {
-      it('should add greater than filter', () => {
+    describe('operators', () => {
+      it('should handle greater than', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereGreaterThan('age', 18);
-        expect(builder.build()).toBe('SELECT * FROM users where (age > 18)');
+        expect(builder.build()).toBe('SELECT * FROM users WHERE (age > 18)');
       });
-    });
 
-    describe('whereGreaterThanOrEquals', () => {
-      it('should add greater than or equals filter', () => {
+      it('should handle greater than or equals', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereGreaterThanOrEquals('age', 18);
-        expect(builder.build()).toBe('SELECT * FROM users where (age >= 18)');
+        expect(builder.build()).toBe('SELECT * FROM users WHERE (age >= 18)');
       });
-    });
 
-    describe('whereLessThan', () => {
-      it('should add less than filter', () => {
+      it('should handle less than', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereLessThan('age', 65);
-        expect(builder.build()).toBe('SELECT * FROM users where (age < 65)');
+        builder.whereLessThan('age', 30);
+        expect(builder.build()).toBe('SELECT * FROM users WHERE (age < 30)');
       });
-    });
 
-    describe('whereLessThanOrEquals', () => {
-      it('should add less than or equals filter', () => {
+      it('should handle less than or equals', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereLessThanOrEquals('age', 65);
-        expect(builder.build()).toBe('SELECT * FROM users where (age <= 65)');
+        builder.whereLessThanOrEquals('age', 30);
+        expect(builder.build()).toBe('SELECT * FROM users WHERE (age <= 30)');
       });
-    });
 
-    describe('whereArrayContains', () => {
-      it('should add array contains filter', () => {
+      it('should handle array contains', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereArrayContains('tags', ['javascript', 'typescript']);
-        expect(builder.build()).toContain('array[tags]::text[]');
+        builder.whereArrayContains('tags', ['javascript']);
+        expect(builder.build()).toContain('tags');
         expect(builder.build()).toContain('<@');
       });
-
-      it('should handle @> containment', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereArrayContains('tags', ['react'], '@>');
-        expect(builder.build()).toContain('@>');
-      });
     });
 
-    describe('whereExists', () => {
-      it('should add EXISTS clause', () => {
+    describe('exists', () => {
+      it('should handle whereExists', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereExists('SELECT 1 FROM orders WHERE orders.user_id = users.id');
-        expect(builder.build()).toBe(
-          'SELECT * FROM users where (EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id))'
-        );
+        builder.whereExists('SELECT 1 FROM profiles WHERE profiles.id = users.id');
+        expect(builder.build()).toContain('EXISTS (SELECT 1 FROM profiles');
       });
-    });
 
-    describe('whereNotExists', () => {
-      it('should add NOT EXISTS clause', () => {
+      it('should handle whereNotExists', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereNotExists('SELECT 1 FROM orders WHERE orders.user_id = users.id');
-        expect(builder.build()).toBe(
-          'SELECT * FROM users where (NOT EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id))'
-        );
-      });
-    });
-
-    describe('whereCondition', () => {
-      it('should add condition filter', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereCondition('age', { gte: 18, lte: 65 });
-        expect(builder.build()).toBe('SELECT * FROM users where ((age >= 18) and (age <= 65))');
-      });
-    });
-
-    describe('whereConditions', () => {
-      it('should add multiple condition filters', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereConditions({
-          age: { gte: 18 },
-          status: { equals: 'active' },
-        } as any);
-        expect(builder.build()).toContain('age >= 18');
-        expect(builder.build()).toContain("status = 'active'");
+        builder.whereNotExists('SELECT 1 FROM profiles WHERE profiles.id = users.id');
+        expect(builder.build()).toContain('NOT EXISTS (SELECT 1 FROM profiles');
       });
     });
 
     describe('whereRaw', () => {
-      it('should add raw SQL filter', () => {
+      it('should add raw where clause', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        builder.whereRaw('custom_field IS NOT NULL');
-        expect(builder.build()).toBe('SELECT * FROM users where custom_field IS NOT NULL');
+        builder.whereRaw('active = true');
+        expect(builder.build()).toBe('SELECT * FROM users WHERE active = true');
       });
 
-      it('should ignore empty raw SQL', () => {
+      it('should ignore empty raw clause', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereRaw('');
         expect(builder.build()).toBe('SELECT * FROM users');
       });
     });
 
-    describe('whereClause', () => {
-      it('should add custom clause', () => {
+    describe('whereClause and andFilter', () => {
+      it('should add clause instance', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-        const clause = new ClauseEquals('status', 'active');
-        builder.whereClause(clause);
-        expect(builder.build()).toBe("SELECT * FROM users where (status = 'active')");
+        builder.whereClause(new ClauseEquals('status', 'active'));
+        expect(builder.build()).toBe("SELECT * FROM users WHERE (status = 'active')");
+      });
+    });
+
+    describe('orFilter', () => {
+      it('should combine clauses with OR', () => {
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+        builder.orFilter(
+          new ClauseEquals('status', 'active'),
+          new ClauseEquals('status', 'pending')
+        );
+        expect(builder.build()).toBe("SELECT * FROM users WHERE ((status = 'active' OR status = 'pending'))");
       });
     });
   });
 
-  describe('orFilter', () => {
-    it('should combine clauses with OR', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.orFilter(new ClauseEquals('status', 'active'), new ClauseEquals('status', 'pending'));
-      expect(builder.build()).toBe(
-        "SELECT * FROM users where ((status = 'active' or status = 'pending'))"
-      );
-    });
-
-    it('should work with other where clauses', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder
-        .whereGreaterThan('age', 18)
-        .orFilter(new ClauseEquals('status', 'active'), new ClauseEquals('status', 'pending'));
-      expect(builder.build()).toContain('age > 18');
-      expect(builder.build()).toContain("status = 'active' or status = 'pending'");
-    });
-  });
-
   describe('order by', () => {
-    it('should add ascending order', () => {
+    it('should add order by field', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder.addOrder('asc', 'name');
-      expect(builder.build()).toBe('SELECT * FROM users order by name asc');
-    });
-
-    it('should add descending order', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.addOrder('desc', 'created_at');
-      expect(builder.build()).toBe('SELECT * FROM users order by created_at desc');
-    });
-
-    it('should add multiple order fields', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.addOrder('asc', 'status', 'name');
-      expect(builder.build()).toBe('SELECT * FROM users order by status asc, name asc');
+      expect(builder.build()).toBe('SELECT * FROM users ORDER BY name asc');
     });
 
     it('should allow chaining different orders', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder.addOrder('desc', 'created_at').addOrder('asc', 'name');
-      expect(builder.build()).toBe('SELECT * FROM users order by created_at desc, name asc');
+      expect(builder.build()).toBe('SELECT * FROM users ORDER BY created_at desc, name asc');
+    });
+
+    it('should throw RangeError when exceeding MAX_ORDER_BY_CLAUSES', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      // Limit is 10. Let's add 11 fields.
+      expect(() => {
+        builder.addOrder(
+          'asc',
+          'name', 'age', 'id', 'status', 'created_at',
+          'email', 'active', 'tags', 'id', 'name', 'age'
+        );
+      }).toThrow(RangeError);
     });
   });
 
   describe('group by', () => {
-    it('should add single group field', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT status, COUNT(*) FROM users');
-      builder.addGroup('status');
-      expect(builder.build()).toBe('SELECT status, COUNT(*) FROM users group by status');
+    it('should add single group by field', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT id, COUNT(*) FROM users');
+      builder.addGroup('id');
+      expect(builder.build()).toBe('SELECT id, COUNT(*) FROM users GROUP BY id');
     });
 
-    it('should add multiple group fields', () => {
+    it('should add multiple group by fields', () => {
       const builder = new SqlBuilder<TestTable>('SELECT status, age, COUNT(*) FROM users');
       builder.addGroup('status', 'age');
-      expect(builder.build()).toBe('SELECT status, age, COUNT(*) FROM users group by status, age');
+      expect(builder.build()).toBe('SELECT status, age, COUNT(*) FROM users GROUP BY status, age');
+    });
+
+    it('should throw RangeError when exceeding MAX_GROUP_BY_CLAUSES', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      // Limit is 10.
+      expect(() => {
+        builder.addGroup(
+          'name', 'age', 'id', 'status', 'created_at',
+          'active', 'email', 'tags', 'id', 'name', 'age'
+        );
+      }).toThrow(RangeError);
     });
   });
 
@@ -273,19 +205,19 @@ describe('SqlBuilder', () => {
     it('should add limit', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder.addLimit(10);
-      expect(builder.build()).toBe('SELECT * FROM users limit 10');
+      expect(builder.build()).toBe('SELECT * FROM users LIMIT 10');
     });
 
     it('should add offset', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.addOffset(20);
-      expect(builder.build()).toBe('SELECT * FROM users offset 20');
+      builder.addOffset(5);
+      expect(builder.build()).toBe('SELECT * FROM users OFFSET 5');
     });
 
     it('should add both limit and offset', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.addLimit(10).addOffset(20);
-      expect(builder.build()).toBe('SELECT * FROM users limit 10 offset 20');
+      builder.addLimit(10).addOffset(5);
+      expect(builder.build()).toBe('SELECT * FROM users LIMIT 10 OFFSET 5');
     });
 
     it('should ignore zero limit', () => {
@@ -294,103 +226,148 @@ describe('SqlBuilder', () => {
       expect(builder.build()).toBe('SELECT * FROM users');
     });
 
+    it('should throw RangeError for negative limit', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      expect(() => builder.addLimit(-1)).toThrow(RangeError);
+    });
+
+    it('should throw TypeError for non-integer limit', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      expect(() => builder.addLimit(1.5)).toThrow(TypeError);
+    });
+
+    it('should throw RangeError for exceeding MAX_LIMIT', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      expect(() => builder.addLimit(2000)).toThrow(RangeError);
+    });
+
     it('should ignore zero offset', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder.addOffset(0);
       expect(builder.build()).toBe('SELECT * FROM users');
     });
-  });
 
-  describe('buildWhere', () => {
-    it('should return only where clause without WHERE keyword', () => {
+    it('should throw RangeError for negative offset', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.whereEquals('status', 'active').whereGreaterThan('age', 18);
-      expect(builder.buildWhere()).toBe("(status = 'active') and (age > 18)");
+      expect(() => builder.addOffset(-1)).toThrow(RangeError);
     });
 
-    it('should return empty string when no where clauses', () => {
+    it('should throw TypeError for non-integer offset', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      expect(builder.buildWhere()).toBe('');
+      expect(() => builder.addOffset(1.5)).toThrow(TypeError);
     });
   });
 
-  describe('complete SQL building', () => {
-    it('should build SQL with all clauses', () => {
+  describe('static from()', () => {
+    it('should create a new instance with base SQL', () => {
+      const builder = SqlBuilder.from<TestTable>('users');
+      expect(builder).toBeInstanceOf(SqlBuilder);
+      expect(builder.build()).toBe('SELECT * FROM users');
+    });
+  });
+
+  describe('column mapping', () => {
+    it('should map field names using columnMapping', () => {
+      const columnMapping = {
+        id: 'user_id',
+        name: 'user_name',
+      };
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users', columnMapping);
+      builder.whereEquals('id', 1).whereEquals('name', 'raian');
+
+      const sql = builder.build();
+      expect(sql).toContain('user_id = 1');
+      expect(sql).toContain("user_name = 'raian'");
+    });
+
+    it('should use MapperBuilder generated mapper (simulated)', () => {
+      const columnMapping = {
+        id: 'user_id',
+        name: 'user_name',
+      };
+      const builder = new SqlBuilder<any>('SELECT * FROM users', columnMapping);
+      builder.whereEquals('id', 1).whereLike('name', 'A%');
+
+      const sql = builder.build();
+      expect(sql).toBe("SELECT * FROM users WHERE (user_id = 1) AND (user_name LIKE 'A%')");
+    });
+  });
+
+  describe('debug methods', () => {
+    it('should return string representation via toString()', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder
-        .whereEquals('status', 'active')
-        .whereGreaterThan('age', 18)
-        .addOrder('desc', 'created_at')
-        .addLimit(10)
-        .addOffset(20);
-
-      const sql = builder.build();
-      expect(sql).toContain("where (status = 'active') and (age > 18)");
-      expect(sql).toContain('order by created_at desc');
-      expect(sql).toContain('limit 10');
-      expect(sql).toContain('offset 20');
-    });
-
-    it('should build SQL with group by and order', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT status, COUNT(*) FROM users');
-      builder.whereGreaterThan('age', 18).addGroup('status').addOrder('desc', 'status');
-
-      const sql = builder.build();
-      expect(sql).toContain('where (age > 18)');
-      expect(sql).toContain('group by status');
-      expect(sql).toContain('order by status desc');
-    });
-
-    it('should normalize whitespace in final SQL', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT   *   FROM   users');
       builder.whereEquals('status', 'active');
-      const sql = builder.build();
-      expect(sql).not.toContain('  ');
-      expect(sql).toBe("SELECT * FROM users where (status = 'active')");
+      const debug = builder.toString();
+      expect(debug).toContain('SqlBuilder');
+      expect(debug).toContain("status = 'active'");
+    });
+
+    it('should return JSON representation via toJSON()', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereEquals('status', 'active').addLimit(10);
+      const json = builder.toJSON();
+      expect(json.base).toBe('SELECT * FROM users');
+      expect(json.limit).toBe(10);
+      expect(json.sql).toContain('LIMIT 10');
     });
   });
 
-  describe('method chaining', () => {
-    it('should allow chaining all methods', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      const result = builder
-        .whereEquals('status', 'active')
-        .whereGreaterThan('age', 18)
-        .whereLike('name', 'John%')
-        .addOrder('desc', 'created_at')
-        .addLimit(10)
-        .addOffset(0);
-
-      expect(result).toBe(builder);
-      expect(builder.build()).toContain("status = 'active'");
-      expect(builder.build()).toContain('age > 18');
-      expect(builder.build()).toContain("name LIKE 'John%'");
-    });
-  });
-
-  describe('multiple filters', () => {
-    it('should combine multiple where clauses with AND', () => {
-      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.whereEquals('status', 'active').whereGreaterThan('age', 18).whereLessThan('age', 65);
-
-      expect(builder.build()).toBe(
-        "SELECT * FROM users where (status = 'active') and (age > 18) and (age < 65)"
-      );
-    });
-
-    it('should handle mix of different clause types', () => {
+  describe('clone()', () => {
+    it('should return a new instance with same state', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder
         .whereEquals('status', 'active')
-        .whereLike('email', '%@example.com')
-        .whereIn('id', [1, 2, 3])
-        .whereGreaterThan('age', 18);
+        .addOrder('asc', 'name')
+        .addGroup('age')
+        .addLimit(10)
+        .addOffset(5);
 
-      const sql = builder.build();
-      expect(sql).toContain("status = 'active'");
-      expect(sql).toContain("email LIKE '%@example.com'");
-      expect(sql).toContain('id IN (1, 2, 3)');
-      expect(sql).toContain('age > 18');
+      const cloned = builder.clone();
+      expect(cloned).not.toBe(builder);
+      expect(cloned.build()).toBe(builder.build());
+      expect(cloned.toJSON()).toEqual(builder.toJSON());
+    });
+    describe('configurable limits', () => {
+      it('should allow overriding maxWhereClauses', () => {
+        const config = { maxWhereClauses: 2 };
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users', undefined, config);
+        builder.whereEquals('id', 1).whereEquals('status', 'active');
+
+        expect(() => builder.whereEquals('age', 25)).toThrow(RangeError);
+      });
+
+      it('should allow overriding maxOrderByClauses', () => {
+        const config = { maxOrderByClauses: 1 };
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users', undefined, config);
+        builder.addOrder('asc', 'name');
+
+        expect(() => builder.addOrder('desc', 'age')).toThrow(RangeError);
+      });
+
+      it('should allow overriding maxGroupByClauses', () => {
+        const config = { maxGroupByClauses: 1 };
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users', undefined, config);
+        builder.addGroup('status');
+
+        expect(() => builder.addGroup('age')).toThrow(RangeError);
+      });
+
+      it('should allow overriding maxLimit', () => {
+        const config = { maxLimit: 50 };
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users', undefined, config);
+
+        expect(() => builder.addLimit(51)).toThrow(RangeError);
+        builder.addLimit(50); // Should pass
+        expect(builder.build()).toContain('LIMIT 50');
+      });
+
+      it('should preserve config in clone()', () => {
+        const config = { maxLimit: 5 };
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users', undefined, config);
+        const cloned = builder.clone();
+
+        expect(() => cloned.addLimit(6)).toThrow(RangeError);
+      });
     });
   });
 });

@@ -23,7 +23,7 @@ describe('ClauseCondition', () => {
       it('should handle date equals', () => {
         const date = new Date('2024-01-15T10:30:00Z');
         const clause = new ClauseCondition('created_at', { equals: date });
-        expect(clause.build()).toBe("(created_at = '15/01/2024')");
+        expect(clause.build()).toBe("(created_at = '2024-01-15')");
       });
     });
 
@@ -64,22 +64,22 @@ describe('ClauseCondition', () => {
     describe('contains conditions', () => {
       it('should generate contains clause for string', () => {
         const clause = new ClauseCondition('name', { contains: 'John' });
-        expect(clause.build()).toBe("(name ilike 'John')");
+        expect(clause.build()).toBe("(name ilike '%John%')");
       });
 
       it('should generate contains clause for number', () => {
         const clause = new ClauseCondition('code', { contains: 123 });
-        expect(clause.build()).toBe("(code ilike '123')");
+        expect(clause.build()).toBe("(code ilike '%123%')");
       });
 
       it('should generate notContains clause for string', () => {
         const clause = new ClauseCondition('name', { notContains: 'test' });
-        expect(clause.build()).toBe("(not name ilike 'test')");
+        expect(clause.build()).toBe("(not name ilike '%test%')");
       });
 
       it('should generate notContains clause for number', () => {
         const clause = new ClauseCondition('code', { notContains: 456 });
-        expect(clause.build()).toBe("(not code ilike '456')");
+        expect(clause.build()).toBe("(not code ilike '%456%')");
       });
     });
 
@@ -124,17 +124,22 @@ describe('ClauseCondition', () => {
         expect(result).toContain('&&');
         expect(result).toContain("'react', 'vue'");
       });
+
+      it('should handle unknown operator type in buildWhere', () => {
+        const clause = new ClauseCondition('field', { unknown: 'val' } as any);
+        expect(clause.build()).toBe("(field = 'val')");
+      });
     });
 
     describe('multiple conditions', () => {
       it('should combine multiple conditions with AND', () => {
         const clause = new ClauseCondition('age', { gte: 18, lte: 65 });
-        expect(clause.build()).toBe('(age >= 18) and (age <= 65)');
+        expect(clause.build()).toBe('(age >= 18) AND (age <= 65)');
       });
 
       it('should combine different condition types', () => {
         const clause = new ClauseCondition('value', { gt: 0, notEquals: 100 });
-        expect(clause.build()).toBe('(value > 0) and (value <> 100)');
+        expect(clause.build()).toBe('(value > 0) AND (value <> 100)');
       });
 
       it('should filter out undefined conditions', () => {
@@ -180,7 +185,7 @@ describe('ClauseCondition', () => {
       it('should treat Date object as equals', () => {
         const date = new Date('2024-01-15T10:30:00Z');
         const clause = new ClauseCondition('created_at', date as any);
-        expect(clause.build()).toBe("created_at = '15/01/2024'");
+        expect(clause.build()).toBe("created_at = '2024-01-15'");
       });
     });
 

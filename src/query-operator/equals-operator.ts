@@ -10,7 +10,7 @@ export class EqualsOperator extends QueryParamsOperator {
   }
 
   value() {
-    const Schema = z.union([StringSchema, BoolSchema, DateSchema, NumberSchema]);
+    const Schema = z.union([NumberSchema, BoolSchema, DateSchema, StringSchema]);
     return Schema.parse(this.getRawValue());
   }
 

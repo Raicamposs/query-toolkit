@@ -12,7 +12,7 @@ describe('ClauseOr', () => {
         const clause2 = new ClauseEquals('status', 'pending');
         const orClause = new ClauseOr(clause1, clause2);
 
-        expect(orClause.build()).toBe("(status = 'active' or status = 'pending')");
+        expect(orClause.build()).toBe("(status = 'active' OR status = 'pending')");
       });
 
       it('should combine three clauses with OR', () => {
@@ -21,7 +21,7 @@ describe('ClauseOr', () => {
         const clause3 = new ClauseEquals('type', 'C');
         const orClause = new ClauseOr(clause1, clause2, clause3);
 
-        expect(orClause.build()).toBe("(type = 'A' or type = 'B' or type = 'C')");
+        expect(orClause.build()).toBe("(type = 'A' OR type = 'B' OR type = 'C')");
       });
 
       it('should combine different clause types', () => {
@@ -29,7 +29,7 @@ describe('ClauseOr', () => {
         const clause2 = new ClauseGreaterThan('age', 18);
         const orClause = new ClauseOr(clause1, clause2);
 
-        expect(orClause.build()).toBe("(status = 'active' or age > 18)");
+        expect(orClause.build()).toBe("(status = 'active' OR age > 18)");
       });
 
       it('should handle LIKE clauses in OR', () => {
@@ -37,7 +37,7 @@ describe('ClauseOr', () => {
         const clause2 = new ClauseLike('name', 'Jane%');
         const orClause = new ClauseOr(clause1, clause2);
 
-        expect(orClause.build()).toBe("(name LIKE 'John%' or name LIKE 'Jane%')");
+        expect(orClause.build()).toBe("(name LIKE 'John%' OR name LIKE 'Jane%')");
       });
     });
 
@@ -49,7 +49,7 @@ describe('ClauseOr', () => {
         const clause2 = new ClauseEquals('status', 'pending');
         orClause.addClause(clause2);
 
-        expect(orClause.build()).toBe("(status = 'active' or status = 'pending')");
+        expect(orClause.build()).toBe("(status = 'active' OR status = 'pending')");
       });
 
       it('should return the clause instance for chaining', () => {
@@ -67,7 +67,7 @@ describe('ClauseOr', () => {
           .addClause(new ClauseEquals('type', 'B'))
           .addClause(new ClauseEquals('type', 'C'));
 
-        expect(orClause.build()).toBe("(type = 'A' or type = 'B' or type = 'C')");
+        expect(orClause.build()).toBe("(type = 'A' OR type = 'B' OR type = 'C')");
       });
     });
 
@@ -78,7 +78,7 @@ describe('ClauseOr', () => {
         const clause3 = new ClauseEquals('status', 'pending');
         const orClause = new ClauseOr(clause1, clause2, clause3);
 
-        expect(orClause.build()).toBe("(status = 'active' or status = 'pending')");
+        expect(orClause.build()).toBe("(status = 'active' OR status = 'pending')");
       });
 
       it('should return undefined when all clauses are undefined', () => {
@@ -107,7 +107,7 @@ describe('ClauseOr', () => {
         const innerOr = new ClauseOr(new ClauseEquals('type', 'A'), new ClauseEquals('type', 'B'));
         const outerOr = new ClauseOr(innerOr, new ClauseEquals('status', 'active'));
 
-        expect(outerOr.build()).toBe("((type = 'A' or type = 'B') or status = 'active')");
+        expect(outerOr.build()).toBe("((type = 'A' OR type = 'B') OR status = 'active')");
       });
     });
   });

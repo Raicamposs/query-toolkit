@@ -4,6 +4,16 @@
   "description": "Pacote de ferramentas para queries. RSQL, filtros, paginação e ordenação.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./common": "./dist/common/index.js",
+    "./converters": "./dist/converters/index.js",
+    "./mappers": "./dist/mappers/index.js",
+    "./query-operator": "./dist/query-operator/index.js",
+    "./rsql-parse": "./dist/rsql-parse/index.js",
+    "./sql-builder": "./dist/sql-builder/index.js",
+    "./types": "./dist/types/index.js"
+  },
   "scripts": {
     "version": "npm version patch",
     "build": "tsc",

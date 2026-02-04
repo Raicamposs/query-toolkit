@@ -24,8 +24,8 @@ const dateTypesSchema = z
       .transform((dateString) => {
         const match = RegExp(regexDateFlutter).exec(dateString);
         if (!match) return dateString;
-        const [, year, month, day, hour, minute, second] = match;
-        const newFormat = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+        const [, year, month, day, hour, minute, second, ms] = match;
+        const newFormat = `${year}-${month}-${day}T${hour}:${minute}:${second}.${ms}`;
         return newFormat;
       })
       .pipe(DatetimeIsoSchema),

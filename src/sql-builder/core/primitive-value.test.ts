@@ -98,19 +98,19 @@ describe('PrimitiveValue', () => {
       it('should format date in DD/MM/YYYY format', () => {
         const date = new Date('2024-01-15T10:30:00Z');
         const value = new PrimitiveValue(date);
-        expect(value.toSql()).toBe("'15/01/2024'");
+        expect(value.toSql()).toBe("'2024-01-15'");
       });
 
       it('should format date at year boundary', () => {
         const date = new Date('2024-12-31T23:59:59Z');
         const value = new PrimitiveValue(date);
-        expect(value.toSql()).toBe("'31/12/2024'");
+        expect(value.toSql()).toBe("'2024-12-31'");
       });
 
       it('should format date at start of year', () => {
         const date = new Date('2024-01-01T00:00:00Z');
         const value = new PrimitiveValue(date);
-        expect(value.toSql()).toBe("'01/01/2024'");
+        expect(value.toSql()).toBe("'2024-01-01'");
       });
     });
 
