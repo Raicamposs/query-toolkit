@@ -5,11 +5,12 @@ on:
     types: [published]
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +20,7 @@ jobs:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
           scope: "@raicamposs"
+          always-auth: true
 
       - name: Install dependencies
         run: npm ci
@@ -32,7 +34,25 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Configure npm auth
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "FALHA: segredo NPM_TOKEN não definido. Defina secrets.NPM_TOKEN no repositório." >&2
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          # garante permissão apenas para o arquivo do runner
+          chmod 0600 ~/.npmrc
+
+      - name: Debug npm (whoami / config)
+        run: |
+          npm whoami --registry https://registry.npmjs.org || true
+          npm config get registry
+          cat ~/.npmrc
+
       - name: Publish to npm
-        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
