@@ -1,19 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ArrayContainsOperator } from '../query-operator/array-contains-operator';
-import { ArrayIsContainedByOperator } from '../query-operator/array-is-contained-by-operator';
-import { ArrayOverlapOperator } from '../query-operator/array-overlap-operator';
-import { BetweenOperator } from '../query-operator/between-operator';
-import { ContainsOperator } from '../query-operator/contains-operator';
-import { EqualsOperator } from '../query-operator/equals-operator';
-import { GreaterThanOperator } from '../query-operator/greater-than-operator';
-import { GreaterThanOrEqualsOperator } from '../query-operator/greater-than-or-equals-operator';
-import { InOperator } from '../query-operator/in-operator';
-import { LessThanOperator } from '../query-operator/less-than-operator';
-import { LessThanOrEqualOperator } from '../query-operator/less-than-or-equals-operator';
-import { NotContainsOperator } from '../query-operator/not-contains-operator';
-import { NotEqualsOperator } from '../query-operator/not-equals-operator';
-import { NotInOperator } from '../query-operator/not-in-operator';
-import { UnknownOperator } from '../query-operator/unknown-operator';
+import {
+  ArrayContainsOperator,
+  ArrayIsContainedByOperator,
+  ArrayOverlapOperator,
+  BetweenOperator,
+  ContainsOperator,
+  EqualsOperator,
+  GreaterThanOperator,
+  GreaterThanOrEqualsOperator,
+  InOperator,
+  LessThanOperator,
+  LessThanOrEqualOperator,
+  NotContainsOperator,
+  NotEqualsOperator,
+  NotInOperator,
+  UnknownOperator,
+} from '../query-operator';
 import {
   ClauseArrayContains,
   ClauseArrayIsContainedBy,

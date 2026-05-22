@@ -1,6 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
+import {
+  ArrayContainsOperator,
+  ArrayIsContainedByOperator,
+  ArrayOverlapOperator,
+  BetweenOperator,
+  ContainsOperator,
+  EqualsOperator,
+  GreaterThanOperator,
+  GreaterThanOrEqualsOperator,
+  InOperator,
+  LessThanOperator,
+  LessThanOrEqualOperator,
+  NotContainsOperator,
+  NotEqualsOperator,
+  NotInOperator,
+  UnknownOperator,
+} from '../query-operator';
 import { QueryParamsOperator } from '../query-operator';
-import { EqualsOperator } from '../query-operator/equals-operator';
 import { OperatorVisitor } from '../converters/operator-visitor';
 import { Nullable } from '@raicamposs/toolkit';
 import { RsqlCondition } from '../types';

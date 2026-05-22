@@ -16,7 +16,7 @@ import {
   NotInOperator,
   QueryParamsOperator,
 } from '../query-operator';
-import { UnknownOperator } from '../query-operator/unknown-operator';
+import { UnknownOperator } from '../query-operator/operators/unknown-operator';
 import { OperatorSymbol, OperatorSymbolType } from '../types/operator-symbol';
 
 export type OperatorResolver = (params: string) => QueryParamsOperator;

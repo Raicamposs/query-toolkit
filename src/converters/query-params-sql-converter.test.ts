@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { EqualsOperator } from '../query-operator/equals-operator';
-import { GreaterThanOperator } from '../query-operator/greater-than-operator';
-import { NotEqualsOperator } from '../query-operator/not-equals-operator';
+import {
+  ArrayContainsOperator,
+  ArrayIsContainedByOperator,
+  ArrayOverlapOperator,
+  BetweenOperator,
+  ContainsOperator,
+  EqualsOperator,
+  GreaterThanOperator,
+  GreaterThanOrEqualsOperator,
+  InOperator,
+  LessThanOperator,
+  LessThanOrEqualOperator,
+  NotContainsOperator,
+  NotEqualsOperator,
+  NotInOperator,
+  UnknownOperator,
+} from '../query-operator';
 import { QueryParamsSqlConverter } from './query-params-sql-converter';
 
 describe('QueryParamsSqlConverter', () => {

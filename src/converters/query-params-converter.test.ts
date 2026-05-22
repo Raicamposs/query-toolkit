@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { EqualsOperator } from '../query-operator/equals-operator';
+import {
+  ArrayContainsOperator,
+  ArrayIsContainedByOperator,
+  ArrayOverlapOperator,
+  BetweenOperator,
+  ContainsOperator,
+  EqualsOperator,
+  GreaterThanOperator,
+  GreaterThanOrEqualsOperator,
+  InOperator,
+  LessThanOperator,
+  LessThanOrEqualOperator,
+  NotContainsOperator,
+  NotEqualsOperator,
+  NotInOperator,
+  UnknownOperator,
+} from '../query-operator';
 import { PrismaVisitor } from './prisma-visitor';
 import { QueryParamsConverter } from './query-params-converter';
 

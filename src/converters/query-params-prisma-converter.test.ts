@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { EqualsOperator } from '../query-operator/equals-operator';
-import { GreaterThanOperator } from '../query-operator/greater-than-operator';
-import { NotEqualsOperator } from '../query-operator/not-equals-operator';
+import {
+  ArrayContainsOperator,
+  ArrayIsContainedByOperator,
+  ArrayOverlapOperator,
+  BetweenOperator,
+  ContainsOperator,
+  EqualsOperator,
+  GreaterThanOperator,
+  GreaterThanOrEqualsOperator,
+  InOperator,
+  LessThanOperator,
+  LessThanOrEqualOperator,
+  NotContainsOperator,
+  NotEqualsOperator,
+  NotInOperator,
+  UnknownOperator,
+} from '../query-operator';
 import { QueryParamsPrismaConverter } from './query-params-prisma-converter';
-import { GreaterThanOrEqualsOperator } from '../query-operator/greater-than-or-equals-operator';
-import { LessThanOrEqualOperator } from '../query-operator/less-than-or-equals-operator';
 
 describe('QueryParamsPrismaConverter', () => {
   it('should successfully convert a single operator to Prisma format', () => {
