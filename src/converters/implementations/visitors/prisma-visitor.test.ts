@@ -15,7 +15,7 @@ import {
   NotEqualsOperator,
   NotInOperator,
   UnknownOperator,
-} from '../query-operator';
+} from '../../../query-operator';
 import { PrismaVisitor } from './prisma-visitor';
 
 describe('PrismaVisitor', () => {

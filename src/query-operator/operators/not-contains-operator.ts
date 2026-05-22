@@ -1,6 +1,6 @@
 import { Nullable } from '@raicamposs/toolkit';
 import { z } from 'zod';
-import type { OperatorVisitor } from '../../converters/operator-visitor';
+import type { OperatorVisitor } from '../../converters';
 import { RsqlCondition } from '../../types';
 import { QueryParamsOperator } from '../query-params-operator';
 

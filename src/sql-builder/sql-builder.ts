@@ -1,51 +1,81 @@
-import { isEmpty, isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
+import { isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
 import { QueryableFields } from '../types';
-import { Clause, ParameterizedQuery } from './core/clause';
+import { ParameterizedQuery } from './core/clause';
+import { SqlBuilderConfig } from './core/config';
 import { SQL_BUILDER_CONSTANTS } from './core/constants';
+import { FilterBuilder } from './core/filter-builder';
 import { PrimitiveValueTypes } from './core/primitive-value';
-import { SQL_KEYWORDS } from './core/sql-keywords';
-import { TransformFunction } from './core/transform-function';
 import {
-  BetweenParam,
-  ClauseAnd,
-  ClauseArrayIsContainedBy,
-  ClauseArrayOverlap,
-  ClauseBetween,
-  ClauseCondition,
-  ClauseContains,
-  ClauseEmpty,
-  ClauseEquals,
-  ClauseGreaterThan,
-  ClauseGreaterThanOrEquals,
-  ClauseILike,
-  ClauseIn,
-  ClauseLessThan,
-  ClauseLessThanOrEquals,
-  ClauseLike,
-  ClauseNotEquals,
-  ClauseNotExists,
-  ClauseNotILike,
-  ClauseNotIn,
-  ClauseOr,
-  Condition,
-} from './implementations';
-import { ClauseExists } from './implementations/clause-exists';
+  DuplicateJoinError,
+  MaxClausesExceededError,
+} from './core/sql-builder-errors';
+import { SQL_KEYWORDS } from './core/sql-keywords';
 
-export interface SqlBuilderConfig {
-  maxWhereClauses: number;
-  maxOrderByClauses: number;
-  maxGroupByClauses: number;
-  maxLimit: number;
+/** Internal representation of a SELECT column entry */
+interface SelectEntry {
+  /** The resolved column expression (after columnMapper is applied, or a raw expression) */
+  expression: string;
+  /** Optional alias for the column (AS <alias>) */
+  alias?: string;
 }
-// ... (rest of class) ...
 
-export class SqlBuilder<Table> {
-  private where: Array<string | Clause> = [];
-  private order: ReadonlyArray<string> = [];
-  private group: ReadonlyArray<string> = [];
+/** Internal representation of a JOIN clause */
+interface JoinEntry {
+  /** The full JOIN SQL fragment, e.g. "LEFT JOIN orders ON users.id = orders.user_id" */
+  sql: string;
+  /**
+   * Canonical identifier to detect duplicate non-raw joins.
+   * For raw joins this is undefined and duplicate detection is skipped.
+   */
+  tableKey?: string;
+}
+
+/** Telemetry event triggered when build() completes successfully */
+export interface QueryBuildEvent {
+  sql: string;
+  params: Nullable<PrimitiveValueTypes>[];
+  durationMs: number;
+}
+
+/** Callback function for query build telemetry/logging */
+export type QueryBuildListener = (event: QueryBuildEvent) => void;
+
+export class SqlBuilder<Table> extends FilterBuilder<Table> {
+  private static readonly regexCache = new Map<number, RegExp>();
+
+  private static getPlaceholderRegex(index: number): RegExp {
+    let regex = SqlBuilder.regexCache.get(index);
+    if (!regex) {
+      regex = new RegExp(`\\$${index}(?=\\b|[^0-9])`, 'g');
+      SqlBuilder.regexCache.set(index, regex);
+    }
+    return regex;
+  }
+
+  private order: string[] = [];
+  private group: string[] = [];
+  private joins: JoinEntry[] = [];
+  private selects: SelectEntry[] = [];
   private limit: number = SQL_BUILDER_CONSTANTS.NO_LIMIT;
   private offset: number = SQL_BUILDER_CONSTANTS.NO_OFFSET;
-  private readonly config: SqlBuilderConfig;
+  private listeners: QueryBuildListener[] = [];
+  /**
+   * True when this builder was created via SqlBuilder.count().
+   * In that mode, SELECT expressions are intentionally ignored to preserve COUNT(*).
+   */
+  private isCountQuery: boolean = false;
+  /**
+   * Cached byte-offset of " FROM " in the base SQL string (upper-cased).
+   * Computed once in the constructor so that resolveSelectClause() never allocates
+   * a temporary uppercase string on every build() call.
+   * Value is -1 when the base SQL has no FROM clause.
+   */
+  private readonly sqlFromIndex: number;
+  /**
+   * O(1) lookup set for joined table names (lower-cased).
+   * Parallel to `joins` array — kept in sync by addJoin() / reset() / clone().
+   */
+  private joinedTables: Set<string> = new Set();
 
   /**
    * Creates a new SqlBuilder instance.
@@ -55,15 +85,20 @@ export class SqlBuilder<Table> {
    */
   constructor(
     protected sql: string,
-    private readonly columnMapper?: Record<string, string>,
+    columnMapper?: Partial<Record<keyof Table & string, string>>,
     config?: Partial<SqlBuilderConfig>
   ) {
-    this.config = {
+    const resolvedConfig = {
       maxWhereClauses: config?.maxWhereClauses ?? SQL_BUILDER_CONSTANTS.MAX_WHERE_CLAUSES,
       maxOrderByClauses: config?.maxOrderByClauses ?? SQL_BUILDER_CONSTANTS.MAX_ORDER_BY_CLAUSES,
       maxGroupByClauses: config?.maxGroupByClauses ?? SQL_BUILDER_CONSTANTS.MAX_GROUP_BY_CLAUSES,
       maxLimit: config?.maxLimit ?? SQL_BUILDER_CONSTANTS.MAX_LIMIT,
+      maxJoins: config?.maxJoins ?? SQL_BUILDER_CONSTANTS.MAX_JOINS,
+      prettyPrint: config?.prettyPrint,
+      enableSecurityWarnings: config?.enableSecurityWarnings,
     };
+    super(columnMapper, resolvedConfig);
+    this.sqlFromIndex = sql.toUpperCase().indexOf(' FROM ');
   }
 
   /**
@@ -75,7 +110,7 @@ export class SqlBuilder<Table> {
    */
   static from<T>(
     table: string,
-    columnMapper?: Record<string, string>,
+    columnMapper?: Partial<Record<keyof T & string, string>>,
     config?: Partial<SqlBuilderConfig>
   ): SqlBuilder<T> {
     return new SqlBuilder<T>(`SELECT * FROM ${table}`, columnMapper, config);
@@ -83,241 +118,145 @@ export class SqlBuilder<Table> {
 
   static count<T>(
     table: string,
-    columnMapper?: Record<string, string>,
+    columnMapper?: Partial<Record<keyof T & string, string>>,
     config?: Partial<SqlBuilderConfig>
   ): SqlBuilder<T> {
-    return new SqlBuilder<T>(`SELECT COUNT(*) as count FROM ${table}`, columnMapper, config);
+    const builder = new SqlBuilder<T>(`SELECT COUNT(*) as count FROM ${table}`, columnMapper, config);
+    builder.isCountQuery = true;
+    return builder;
   }
 
-  private column(field: QueryableFields<Table>): string {
-    const fieldStr = field.toString();
-    if (this.columnMapper && this.columnMapper[fieldStr]) {
-      return this.columnMapper[fieldStr];
-    }
-    return fieldStr;
-  }
 
-  /** Filter Elements - Add where clause filters */
-  private andFilter(value: Clause): this {
-    if (this.where.length >= this.config.maxWhereClauses) {
-      throw new RangeError(`Maximum WHERE clauses exceeded: ${this.config.maxWhereClauses}`);
-    }
-    const filter = value.build({ startParamIndex: 1 });
-    if (filter && filter.sql) this.where = [...this.where, value];
-    return this;
-  }
-
-  whereClause(clause: Clause): this {
-    return this.andFilter(clause);
-  }
-
-  whereClauses(clauses: Clause[]): this {
-    for (const clause of clauses) {
-      this.whereClause(clause);
-    }
-    return this;
-  }
-
-  whereExists(sql: string): this {
-    return this.andFilter(new ClauseExists(sql));
-  }
-
-  whereNotExists(sql: string): this {
-    return this.andFilter(new ClauseNotExists(sql));
-  }
+  // ─── Column Selection ─────────────────────────────────────────────────────
 
   /**
-   * Adds a WHERE IN clause.
-   * @param field The field to filter on.
-   * @param compareFields The array of values to check against.
+   * Selects specific columns from the table, applying columnMapper automatically.
+   * If never called, the query defaults to SELECT *.
+   * When called on a count() builder, the selection is silently ignored.
+   *
+   * @param fields One or more domain field names (mapped via columnMapper when applicable).
    */
-  whereIn(field: QueryableFields<Table>, compareFields: string[] | number[]): this {
-    return this.andFilter(new ClauseIn(this.column(field), compareFields));
-  }
-
-  /**
-   * Adds a WHERE NOT IN clause.
-   * @param field The field to filter on.
-   * @param compareFields The array of values to exclude.
-   */
-  whereNotIn(field: QueryableFields<Table>, compareFields: string[] | number[]): this {
-    return this.andFilter(new ClauseNotIn(this.column(field), compareFields));
-  }
-
-  /**
-   * Adds a WHERE LIKE clause.
-   * @param field The field to filter on.
-   * @param value The pattern to match (e.g., "%value%").
-   */
-  whereLike(field: QueryableFields<Table>, value: string): this {
-    return this.andFilter(new ClauseLike(this.column(field), value));
-  }
-
-  /**
-   * Adds a WHERE ILIKE clause (case-insensitive LIKE).
-   * @param field The field to filter on.
-   * @param value The pattern to match.
-   */
-  whereILike(field: QueryableFields<Table>, value: string): this {
-    return this.andFilter(new ClauseILike(this.column(field), value));
-  }
-
-  /**
-   * Adds a WHERE NOT ILIKE clause (case-insensitive NOT LIKE).
-   * @param field The field to filter on.
-   * @param value The pattern to match.
-   */
-  whereNotILike(field: QueryableFields<Table>, value: string): this {
-    return this.andFilter(new ClauseNotILike(this.column(field), value));
-  }
-
-  /**
-   * Adds a WHERE BETWEEN clause.
-   * @param field The field to filter on.
-   * @param start The start value (inclusive).
-   * @param end The end value (inclusive).
-   */
-  whereBetween(field: QueryableFields<Table>, start: BetweenParam, end: BetweenParam): this {
-    return this.andFilter(new ClauseBetween(this.column(field), start, end));
-  }
-
-  whereGreaterThan(field: QueryableFields<Table>, value: Date | number): this {
-    return this.andFilter(new ClauseGreaterThan(this.column(field), value));
-  }
-
-  whereGreaterThanOrEquals(field: QueryableFields<Table>, value: Date | number): this {
-    return this.andFilter(new ClauseGreaterThanOrEquals(this.column(field), value));
-  }
-
-  whereLessThan(field: QueryableFields<Table>, value: Date | number): this {
-    return this.andFilter(new ClauseLessThan(this.column(field), value));
-  }
-
-  whereLessThanOrEquals(field: QueryableFields<Table>, value: Date | number): this {
-    return this.andFilter(new ClauseLessThanOrEquals(this.column(field), value));
-  }
-
-  /**
-   * Adds a WHERE BETWEEN clause using an object with gte/lte properties.
-   */
-  whereBetweenOperator(
-    field: QueryableFields<Table>,
-    operator: {
-      gte: Date | number;
-      lte: Date | number;
-    }
-  ): this {
-    return this.andFilter(new ClauseBetween(this.column(field), operator.gte, operator.lte));
-  }
-
-  /**
-   * Adds a WHERE = clause.
-   * @param field The field to filter on.
-   * @param value The value to match.
-   */
-  whereEquals(field: QueryableFields<Table>, value: string | number | boolean): this {
-    return this.andFilter(new ClauseEquals(this.column(field), value));
-  }
-
-  /**
-   * Adds a WHERE != clause.
-   * @param field The field to filter on.
-   * @param value The value to exclude.
-   */
-  whereNotEquals(field: QueryableFields<Table>, value: string | number | boolean): this {
-    return this.andFilter(new ClauseNotEquals(this.column(field), value));
-  }
-
-  /**
-   * Filter by array containment operations
-   * @param field - Field name
-   * @param compareFields - Array of values to compare
-   * @param containment - Containment operator: '@>' (contains) or '<@' (is contained by)
-   */
-  whereArrayContains(
-    field: QueryableFields<Table>,
-    compareFields: string[],
-    containment?: '<@' | '@>'
-  ): this {
-    return this.andFilter(new ClauseContains(this.column(field), compareFields, containment));
-  }
-
-  /**
-   * Filter where field is contained by a specified array
-   * @param field - Field name
-   * @param compareFields - Array of values
-   */
-  whereArrayIsContainedBy(field: QueryableFields<Table>, compareFields: string[]): this {
-    return this.andFilter(new ClauseArrayIsContainedBy(this.column(field), compareFields));
-  }
-
-  /**
-   * Filter where field array overlaps with another array
-   * @param field - Field name
-   * @param compareFields - Array of values
-   */
-  whereArrayOverlap(field: QueryableFields<Table>, compareFields: string[]): this {
-    return this.andFilter(new ClauseArrayOverlap(this.column(field), compareFields));
-  }
-
-  /**
-   * Filter checking if a field is empty (NULL or empty string/array representation)
-   * @param field - Field name
-   */
-  whereEmpty(field: QueryableFields<Table>): this {
-    return this.andFilter(new ClauseEmpty());
-  }
-
-  /**
-   * Adds multiple conditions from an object.
-   * @param values Object where keys are fields and values are conditions.
-   * @param transform Optional function to transform values before building clauses.
-   */
-  whereConditions(
-    values: Partial<Record<QueryableFields<Table>, Condition>>,
-    transform?: TransformFunction
-  ): this {
-    for (const [key, value] of Object.entries(values)) {
-      if (value) {
-        this.whereCondition(key as QueryableFields<Table>, value as Condition, transform);
-      }
+  select(...fields: Array<QueryableFields<Table>>): this {
+    for (const field of fields) {
+      this.selects.push({ expression: this.column(field) });
     }
     return this;
   }
 
   /**
-   * Adds a single complex condition.
-   * @param field The field to filter on.
-   * @param value The condition (e.g., { gt: 10, lte: 20 }).
-   * @param transform Optional value transformer.
+   * Adds a raw SQL expression to the SELECT clause (e.g. "COUNT(*) as total").
+   * columnMapper is NOT applied — the caller is fully responsible for the expression.
+   *
+   * @param expression Raw SQL expression.
+   * @param alias Optional alias for the expression (AS <alias>).
    */
-  whereCondition(
-    field: QueryableFields<Table>,
-    value: Condition,
-    transform?: TransformFunction
-  ): this {
-    return this.andFilter(new ClauseCondition(field.toString(), value, transform));
-  }
-
-  whereRaw(raw: string): this {
-    if (!isEmpty(raw)) this.where = [...this.where, raw];
+  selectRaw(expression: string, alias?: string): this {
+    this.checkSecurity(expression, []);
+    this.selects.push({ expression, alias });
     return this;
   }
 
   /**
-   * Adds an OR clause containing multiple sub-clauses.
-   * @param value List of clauses to join with OR.
+   * Selects a column with an explicit alias.
+   * columnMapper is applied to the field, but the alias is used as-is.
+   *
+   * @param field Domain field name.
+   * @param alias The SQL alias (AS <alias>).
    */
-  orFilter(...value: Clause[]): this {
-    return this.andFilter(new ClauseOr(...value));
+  selectAs(field: QueryableFields<Table>, alias: string): this {
+    this.selects.push({ expression: this.column(field), alias });
+    return this;
+  }
+
+  // ─── JOIN Clauses ─────────────────────────────────────────────────────────
+
+  /**
+   * Adds a structured JOIN clause. Duplicate table joins are rejected with a RangeError.
+   * For cross-table ON conditions, fields are accepted as plain strings since the TypeScript
+   * type system cannot infer cross-table column names without composite generics.
+   *
+   * Design decision: duplicates throw a RangeError (not silent ignore).
+   * Rationale: silently ignoring a duplicate JOIN hides a likely application bug (e.g. a
+   * repository method called twice). Failing loudly makes the defect immediately visible.
+   *
+   * @param type JOIN type keyword.
+   * @param table The table to join.
+   * @param leftColumn The left-hand column in the ON clause (e.g. "users.id").
+   * @param rightColumn The right-hand column in the ON clause (e.g. "orders.user_id").
+   */
+  private addJoin(
+    type: string,
+    table: string,
+    leftColumn: string,
+    rightColumn: string
+  ): this {
+    if (this.joins.length >= this.config.maxJoins) {
+      throw new MaxClausesExceededError(`Maximum JOIN clauses exceeded: ${this.config.maxJoins}`);
+    }
+    const tableKey = table.trim().toLowerCase();
+    if (this.joinedTables.has(tableKey)) {
+      throw new DuplicateJoinError(`Duplicate JOIN detected for table: "${table}"`);
+    }
+    this.joinedTables.add(tableKey);
+    this.joins.push({
+      sql: `${type} ${table} ${SQL_KEYWORDS.ON} ${leftColumn} = ${rightColumn}`,
+      tableKey,
+    });
+    return this;
   }
 
   /**
-   * Adds an AND clause containing multiple sub-clauses.
-   * @param clauses List of clauses to join with AND.
+   * Adds an INNER JOIN clause.
+   * @param table Table to join.
+   * @param leftColumn Left-side ON column (e.g. "users.id").
+   * @param rightColumn Right-side ON column (e.g. "orders.user_id").
    */
-  whereAnd(...clauses: Clause[]): this {
-    return this.andFilter(new ClauseAnd(...clauses));
+  join(table: string, leftColumn: string, rightColumn: string): this {
+    return this.addJoin(SQL_KEYWORDS.JOIN, table, leftColumn, rightColumn);
+  }
+
+  /**
+   * Adds a LEFT JOIN clause.
+   * @param table Table to join.
+   * @param leftColumn Left-side ON column.
+   * @param rightColumn Right-side ON column.
+   */
+  leftJoin(table: string, leftColumn: string, rightColumn: string): this {
+    return this.addJoin(SQL_KEYWORDS.LEFT_JOIN, table, leftColumn, rightColumn);
+  }
+
+  /**
+   * Adds a RIGHT JOIN clause.
+   * @param table Table to join.
+   * @param leftColumn Left-side ON column.
+   * @param rightColumn Right-side ON column.
+   */
+  rightJoin(table: string, leftColumn: string, rightColumn: string): this {
+    return this.addJoin(SQL_KEYWORDS.RIGHT_JOIN, table, leftColumn, rightColumn);
+  }
+
+  /**
+   * Adds a FULL OUTER JOIN clause.
+   * @param table Table to join.
+   * @param leftColumn Left-side ON column.
+   * @param rightColumn Right-side ON column.
+   */
+  fullJoin(table: string, leftColumn: string, rightColumn: string): this {
+    return this.addJoin(SQL_KEYWORDS.FULL_JOIN, table, leftColumn, rightColumn);
+  }
+
+  /**
+   * Adds a raw JOIN expression without any validation or duplicate checking.
+   * Use for complex join conditions that cannot be expressed via the structured API.
+   *
+   * @param rawJoin A complete JOIN SQL fragment (e.g. "INNER JOIN tags t ON t.id = ANY(users.tag_ids)").
+   */
+  joinRaw(rawJoin: string): this {
+    if (this.joins.length >= this.config.maxJoins) {
+      throw new MaxClausesExceededError(`Maximum JOIN clauses exceeded: ${this.config.maxJoins}`);
+    }
+    this.joins.push({ sql: rawJoin });
+    return this;
   }
 
   /**
@@ -327,10 +266,12 @@ export class SqlBuilder<Table> {
    */
   addOrder(sort: 'asc' | 'desc', ...value: Array<QueryableFields<Table>>): this {
     if (this.order.length + value.length > this.config.maxOrderByClauses) {
-      throw new RangeError(`Maximum ORDER BY clauses exceeded: ${this.config.maxOrderByClauses}`);
+      throw new MaxClausesExceededError(
+        `Maximum ORDER BY clauses exceeded: ${this.config.maxOrderByClauses}`
+      );
     }
     const newOrders = value.map((element) => `${this.column(element)} ${sort}`);
-    this.order = [...this.order, ...newOrders];
+    this.order.push(...newOrders);
     return this;
   }
 
@@ -340,10 +281,12 @@ export class SqlBuilder<Table> {
    */
   addGroup(...value: Array<QueryableFields<Table>>): this {
     if (this.group.length + value.length > this.config.maxGroupByClauses) {
-      throw new RangeError(`Maximum GROUP BY clauses exceeded: ${this.config.maxGroupByClauses}`);
+      throw new MaxClausesExceededError(
+        `Maximum GROUP BY clauses exceeded: ${this.config.maxGroupByClauses}`
+      );
     }
     const newGroups = value.map((element) => this.column(element));
-    this.group = [...this.group, ...newGroups];
+    this.group.push(...newGroups);
     return this;
   }
 
@@ -390,69 +333,198 @@ export class SqlBuilder<Table> {
     return this;
   }
 
+  /**
+   * Resets all filters (where, order, group, joins, selects, limit, offset) back to the base query.
+   */
+  reset(): this {
+    this.where = [];
+    this.order = [];
+    this.group = [];
+    this.joins = [];
+    this.joinedTables = new Set();
+    this.selects = [];
+    this.limit = SQL_BUILDER_CONSTANTS.NO_LIMIT;
+    this.offset = SQL_BUILDER_CONSTANTS.NO_OFFSET;
+    return this;
+  }
+
+  /**
+   * Registers a listener that is invoked whenever build() completes successfully.
+   * Useful for performance telemetry, logging, and integration with APMs.
+   */
+  onBuild(listener: QueryBuildListener): this {
+    this.listeners.push(listener);
+    return this;
+  }
+
+  /**
+   * Alias semântico para build()
+   */
+  toSQL(): ParameterizedQuery {
+    return this.build();
+  }
 
   /**
    * Builds the SQL query with parameterized values (prepared statement format).
    * This is the recommended way to generate queries for execution against a database.
+   *
+   * SQL order: SELECT … FROM … JOINs … WHERE … GROUP BY … ORDER BY … LIMIT … OFFSET
+   *
+   * Uses an array of string parts joined at the end to avoid allocating intermediate
+   * strings for each SQL clause.
+   *
    * @returns An object containing the SQL string with placeholders ($1, $2, etc.) and the array of parameter values.
    */
   build(): ParameterizedQuery {
-    let finalSql = this.sql;
+    const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const parts: string[] = [this.resolveSelectClause()];
     const allParams: Nullable<PrimitiveValueTypes>[] = [];
     let paramIndex = 1;
+
+    // JOINs — inserted immediately after FROM, before WHERE
+    if (this.joins.length > 0) {
+      parts.push(this.joins.map((j) => j.sql).join(' '));
+    }
 
     if (this.where.length > 0) {
       const whereParts: string[] = [];
 
       for (const w of this.where) {
-        if (typeof w === 'string') {
-          whereParts.push(w);
-        } else {
-          const built = w.build({ startParamIndex: paramIndex });
-          if (built) {
-            whereParts.push(`(${built.sql})`);
-            allParams.push(...built.params);
-            paramIndex += built.params.length;
-          }
+        const built = w.build({ startParamIndex: paramIndex });
+        if (built && built.sql) {
+          whereParts.push(`(${built.sql})`);
+          allParams.push(...built.params);
+          paramIndex += built.params.length;
         }
       }
 
       if (whereParts.length > 0) {
-        finalSql = `${finalSql} ${SQL_KEYWORDS.WHERE} ${whereParts.join(` ${SQL_KEYWORDS.AND} `)}`;
+        parts.push(`${SQL_KEYWORDS.WHERE} ${whereParts.join(` ${SQL_KEYWORDS.AND} `)}`);
       }
     }
 
     if (this.group.length > 0) {
-      finalSql = `${finalSql} ${SQL_KEYWORDS.GROUP_BY} ${this.group.join(', ')}`;
+      parts.push(`${SQL_KEYWORDS.GROUP_BY} ${this.group.join(', ')}`);
     }
 
     if (this.order.length > 0) {
-      finalSql = `${finalSql} ${SQL_KEYWORDS.ORDER_BY} ${this.order.join(', ')}`;
+      parts.push(`${SQL_KEYWORDS.ORDER_BY} ${this.order.join(', ')}`);
     }
 
     if (this.limit > SQL_BUILDER_CONSTANTS.NO_LIMIT) {
-      finalSql = `${finalSql} ${SQL_KEYWORDS.LIMIT} ${this.limit}`;
+      parts.push(`${SQL_KEYWORDS.LIMIT} ${this.limit}`);
     }
 
     if (this.offset > SQL_BUILDER_CONSTANTS.NO_OFFSET) {
-      finalSql = `${finalSql} ${SQL_KEYWORDS.OFFSET} ${this.offset}`;
+      parts.push(`${SQL_KEYWORDS.OFFSET} ${this.offset}`);
+    }
+
+    const rawSql = parts.join(' ');
+    const sql = this.config.prettyPrint !== false
+      ? rawSql.replace(/\s+/g, ' ').trim()
+      : rawSql.trim();
+
+    const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const durationMs = endTime - startTime;
+
+    if (this.listeners.length > 0) {
+      const event: QueryBuildEvent = { sql, params: allParams, durationMs };
+      for (const listener of this.listeners) {
+        try {
+          listener(event);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error('Error in SqlBuilder build listener:', e);
+        }
+      }
     }
 
     return {
-      sql: finalSql.replace(/\s+/g, ' ').trim(),
+      sql,
       params: allParams,
     };
   }
 
   /**
-   * Creates a deep clone of this SqlBuilder instance
-   * Useful for creating derived queries from a base query
+   * Resolves the SELECT clause from the base SQL, applying column selection when present.
+   *
+   * Rules:
+   * - Count queries always keep their original COUNT(*) expression (isCountQuery flag).
+   * - If no selects were registered → return the original sql unchanged (SELECT *).
+   * - Otherwise → replace the SELECT portion with the resolved column list.
+   *
+   * Uses `this.sqlFromIndex` (cached in the constructor) to avoid allocating a new
+   * uppercase string on every build() call.
    */
-  clone(): SqlBuilder<Table> {
-    const cloned = new SqlBuilder<Table>(this.sql, this.columnMapper, this.config);
+  private resolveSelectClause(): string {
+    if (this.isCountQuery || this.selects.length === 0) {
+      return this.sql;
+    }
+
+    const columns = this.selects
+      .map((entry) => (entry.alias ? `${entry.expression} AS ${entry.alias}` : entry.expression))
+      .join(', ');
+
+    if (this.sqlFromIndex === -1) {
+      // Fallback: base SQL has no FROM clause — prepend the resolved SELECT
+      return `SELECT ${columns} ${this.sql}`;
+    }
+
+    return `SELECT ${columns}${this.sql.slice(this.sqlFromIndex)}`;
+  }
+
+  /**
+   * Retorna a string SQL crua com os parâmetros interpolados e sanitizados (apenas para debug/logging).
+   * Não deve ser utilizada para execução contra o banco devido a riscos de formatação sutil.
+   *
+   * @deprecated Use only for debugging/logging. Never execute the output against a database.
+   */
+  buildRaw(): string {
+    const { sql, params } = this.build();
+    let rawSql = sql;
+    params.forEach((param, index) => {
+      let formattedParam = 'NULL';
+      if (param !== null && param !== undefined) {
+        if (typeof param === 'string') {
+          formattedParam = `'${param.replace(/'/g, "''")}'`;
+        } else if (param instanceof Date) {
+          formattedParam = `'${param.toISOString()}'`;
+        } else if (Array.isArray(param)) {
+          const arrayItems = param
+            .map((p) => {
+              if (typeof p === 'string') return `"${p.replace(/"/g, '\\"')}"`;
+              return String(p);
+            })
+            .join(',');
+          formattedParam = `'[${arrayItems}]'`;
+        } else {
+          formattedParam = String(param);
+        }
+      }
+      rawSql = rawSql.replace(SqlBuilder.getPlaceholderRegex(index + 1), formattedParam);
+    });
+    return rawSql;
+  }
+
+  /**
+   * Creates a deep clone of this SqlBuilder instance.
+   * Useful for creating derived queries from a base query.
+   * Joins, selects, where clauses, ordering and pagination are all copied.
+   */
+  clone(): this {
+    const constructor = this.constructor as new (
+      sql: string,
+      columnMapper?: Partial<Record<string, string>>,
+      config?: Partial<SqlBuilderConfig>
+    ) => this;
+    const cloned = new constructor(this.sql, this.columnMapper as Partial<Record<string, string>>, this.config);
     cloned.where = [...this.where];
     cloned.order = [...this.order];
     cloned.group = [...this.group];
+    cloned.joins = [...this.joins];
+    cloned.joinedTables = new Set(this.joinedTables);
+    cloned.selects = [...this.selects];
+    cloned.isCountQuery = this.isCountQuery;
     cloned.limit = this.limit;
     cloned.offset = this.offset;
     return cloned;
@@ -464,6 +536,8 @@ export class SqlBuilder<Table> {
   toString(): string {
     return `SqlBuilder {
   base: "${this.sql}",
+  selects: [${this.selects.length} columns],
+  joins: [${this.joins.length} joins],
   where: [${this.where.length} clauses],
   order: [${this.order.map((o) => `"${o}"`).join(', ')}],
   group: [${this.group.map((g) => `"${g}"`).join(', ')}],
@@ -473,17 +547,22 @@ export class SqlBuilder<Table> {
   }
 
   /**
-   * Returns a JSON representation of the builder state
+   * Returns a JSON representation of the builder state.
+   * build() is called exactly once and its result cached locally to avoid
+   * duplicate work and to guarantee a consistent snapshot.
    */
   toJSON() {
+    const built = this.build();
     return {
       base: this.sql,
+      selects: this.selects.map((s) => (s.alias ? `${s.expression} AS ${s.alias}` : s.expression)),
+      joins: this.joins.map((j) => j.sql),
       where: '...Serialized clauses not supported...',
       order: [...this.order],
       group: [...this.group],
       limit: this.limit,
       offset: this.offset,
-      sql: this.build().sql,
+      sql: built.sql,
     };
   }
 }

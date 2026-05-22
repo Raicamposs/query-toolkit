@@ -29,13 +29,15 @@ export abstract class ClauseExistsBase extends Clause {
     // Validate that the SQL is a SELECT subquery
     if (!trimmedSql.toUpperCase().startsWith('SELECT')) {
       throw new Error(
-        `EXISTS clause requires a SELECT subquery. Received: ${trimmedSql.substring(0, 50)}...`
+        `EXISTS clause requires a SELECT subquery. Received: ${ClauseExistsBase.preview(trimmedSql)}`
       );
     }
 
     // Check for SQL injection patterns
     if (SqlInjectionDetector.detect(this.sql)) {
-      throw new Error(`SQL injection detected in EXISTS subquery: ${this.sql.substring(0, 50)}...`);
+      throw new Error(
+        `SQL injection detected in EXISTS subquery: ${ClauseExistsBase.preview(this.sql)}`
+      );
     }
 
     const prefix = this.getPrefix().trim();
@@ -46,6 +48,15 @@ export abstract class ClauseExistsBase extends Clause {
     }
 
     return `EXISTS (${sql})`;
+  }
+
+  /**
+   * Returns a safe preview of a SQL string for error messages.
+   * Appends '...' only when the string exceeds the threshold, avoiding
+   * misleading ellipsis on short inputs.
+   */
+  private static preview(sql: string, maxLength = 50): string {
+    return sql.length > maxLength ? `${sql.substring(0, maxLength)}...` : sql;
   }
 
   build(_option?: { startParamIndex?: number }) {

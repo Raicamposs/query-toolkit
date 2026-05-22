@@ -4,9 +4,30 @@ import { PrimitiveArrayValue } from '../core/primitive-array-value';
 import { PrimitiveValue, PrimitiveValueTypes } from '../core/primitive-value';
 import { TransformFunction } from '../core/transform-function';
 
-export type Condition = {
-  [key: string]: string | number | Date | boolean | Array<string | number | Date | boolean>;
-};
+/**
+ * All recognized operator keys for the Condition type.
+ * Any unknown key falls through to the `equals` operator (backward compatible).
+ * Using a union literal allows IDEs to auto-complete and TypeScript to warn
+ * on typos like { equasl: 1 } instead of silently using the default branch.
+ */
+export type ConditionKey =
+  | 'equals'
+  | 'notEquals'
+  | 'contains'
+  | 'notContains'
+  | 'in'
+  | 'notIn'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'arrayContains'
+  | 'arrayIsContainedBy'
+  | 'arrayOverlap';
+
+export type Condition = Partial<
+  Record<ConditionKey, string | number | Date | boolean | Array<string | number | Date | boolean>>
+>;
 
 export class ClauseCondition extends Clause {
   constructor(
@@ -23,22 +44,16 @@ export class ClauseCondition extends Clause {
     let paramIndex = option?.startParamIndex ?? 1;
     const allParams: Nullable<PrimitiveValueTypes>[] = [];
 
-    if (!(this.condition instanceof Object)) {
-      const value = new PrimitiveValue(this.condition, this.transformFunction).toValue();
-      const built = this.transformParameterized('equals', value, paramIndex);
-      return built;
-    }
-
-    if (this.condition instanceof Date) {
-      const value = new PrimitiveValue(this.condition, this.transformFunction).toValue();
-      const built = this.transformParameterized('equals', value, paramIndex);
-      return built;
+    // Date is an object, so we must check it before the general object check
+    if (this.condition instanceof Date || typeof this.condition !== 'object') {
+      const value = new PrimitiveValue(this.condition as unknown as PrimitiveValueTypes, this.transformFunction).toValue();
+      return this.transformParameterized('equals', value, paramIndex);
     }
 
     const parts: string[] = [];
 
-    for (const filter of Object.keys(this.condition)) {
-      const conditionValue = this.condition[filter];
+    for (const key of Object.keys(this.condition) as ConditionKey[]) {
+      const conditionValue = this.condition[key];
       let value: Nullable<PrimitiveValueTypes> | Nullable<PrimitiveValueTypes>[];
 
       if (Array.isArray(conditionValue)) {
@@ -47,7 +62,7 @@ export class ClauseCondition extends Clause {
         value = new PrimitiveValue(conditionValue, this.transformFunction).toValue();
       }
 
-      const built = this.transformParameterized(filter, value, paramIndex);
+      const built = this.transformParameterized(key, value, paramIndex);
 
       if (built) {
         parts.push(`(${built.sql})`);

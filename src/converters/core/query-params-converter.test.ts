@@ -15,8 +15,8 @@ import {
   NotEqualsOperator,
   NotInOperator,
   UnknownOperator,
-} from '../query-operator';
-import { PrismaVisitor } from './prisma-visitor';
+} from '../../query-operator';
+import { PrismaVisitor } from '../implementations/visitors/prisma-visitor';
 import { QueryParamsConverter } from './query-params-converter';
 
 describe('QueryParamsConverter', () => {

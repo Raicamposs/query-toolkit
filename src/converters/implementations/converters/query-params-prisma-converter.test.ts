@@ -1,21 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ArrayContainsOperator,
-  ArrayIsContainedByOperator,
-  ArrayOverlapOperator,
-  BetweenOperator,
-  ContainsOperator,
   EqualsOperator,
   GreaterThanOperator,
   GreaterThanOrEqualsOperator,
-  InOperator,
-  LessThanOperator,
   LessThanOrEqualOperator,
-  NotContainsOperator,
   NotEqualsOperator,
-  NotInOperator,
-  UnknownOperator,
-} from '../query-operator';
+} from '../../../query-operator';
 import { QueryParamsPrismaConverter } from './query-params-prisma-converter';
 
 describe('QueryParamsPrismaConverter', () => {

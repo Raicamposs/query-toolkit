@@ -21,3 +21,6 @@ export * from './clause-not-in';
 export * from './clause-or';
 export * from './clause-empty';
 export * from './clause-and';
+export * from './clause-is-empty';
+export * from './clause-raw';
+export * from './clause-cursor';

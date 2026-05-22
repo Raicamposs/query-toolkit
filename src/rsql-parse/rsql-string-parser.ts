@@ -9,6 +9,12 @@ import { OPERATORS } from '../types/operator-symbol';
  */
 export class RsqlStringParser<T = unknown> {
   /**
+   * Expressão regular estática pré-compilada para evitar pressão de GC (Garbage Collection).
+   * Valida se um caractere anterior pertence ao conjunto de caracteres de palavras.
+   */
+  private static readonly WORD_CHAR_REGEX = /^[a-zA-Z0-9_]$/;
+
+  /**
    * Inicializa o parser com a string bruta de filtros RSQL.
    * @param filter Filtro RSQL bruto.
    */
@@ -96,35 +102,7 @@ export class RsqlStringParser<T = unknown> {
    * @returns Objeto com o nome do campo e a representação bruta do valor.
    */
   private splitPart(part: string): { field: string; rawValue: string } {
-    let firstOpIndex = -1;
-    let foundOp = '';
-
-    for (const op of OPERATORS) {
-      let index = -1;
-      let startSearch = 0;
-
-      while (true) {
-        index = part.indexOf(op, startSearch);
-        if (index === -1) {
-          break;
-        }
-
-        const isTextOp = /^[a-z]/.test(op);
-        if (isTextOp && index > 0) {
-          const prevChar = part[index - 1];
-          if (prevChar && /^[a-zA-Z0-9_]$/.test(prevChar)) {
-            startSearch = index + 1;
-            continue;
-          }
-        }
-
-        if (firstOpIndex === -1 || index < firstOpIndex) {
-          firstOpIndex = index;
-          foundOp = op;
-        }
-        break;
-      }
-    }
+    const { firstOpIndex, foundOp } = this.findFirstOperator(part);
 
     if (firstOpIndex === -1) {
       return { field: '', rawValue: '' };
@@ -138,5 +116,47 @@ export class RsqlStringParser<T = unknown> {
     }
 
     return { field, rawValue };
+  }
+
+  /**
+   * Localiza o índice e o símbolo do primeiro operador RSQL válido presente em um fragmento.
+   * @param part Expressão de condição bruta.
+   * @returns O índice do início do operador e o próprio operador encontrado.
+   */
+  private findFirstOperator(part: string): { firstOpIndex: number; foundOp: string } {
+    let firstOpIndex = -1;
+    let foundOp = '';
+
+    for (const op of OPERATORS) {
+      let index = -1;
+      let startSearch = 0;
+
+      // Micro-otimização: verifica se o operador inicia com uma letra minúscula (a-z) sem usar RegExp dinâmico
+      const firstCharCode = op.charCodeAt(0);
+      const isTextOp = firstCharCode >= 97 && firstCharCode <= 122;
+
+      while (true) {
+        index = part.indexOf(op, startSearch);
+        if (index === -1) {
+          break;
+        }
+
+        if (isTextOp && index > 0) {
+          const prevChar = part[index - 1];
+          if (prevChar && RsqlStringParser.WORD_CHAR_REGEX.test(prevChar)) {
+            startSearch = index + 1;
+            continue;
+          }
+        }
+
+        if (firstOpIndex === -1 || index < firstOpIndex) {
+          firstOpIndex = index;
+          foundOp = op;
+        }
+        break;
+      }
+    }
+
+    return { firstOpIndex, foundOp };
   }
 }

@@ -1,21 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ArrayContainsOperator,
-  ArrayIsContainedByOperator,
-  ArrayOverlapOperator,
-  BetweenOperator,
-  ContainsOperator,
-  EqualsOperator,
-  GreaterThanOperator,
-  GreaterThanOrEqualsOperator,
-  InOperator,
-  LessThanOperator,
-  LessThanOrEqualOperator,
-  NotContainsOperator,
-  NotEqualsOperator,
-  NotInOperator,
-  UnknownOperator,
-} from '../query-operator';
+import { EqualsOperator, GreaterThanOperator, NotEqualsOperator } from '../../../query-operator';
 import { QueryParamsSqlConverter } from './query-params-sql-converter';
 
 describe('QueryParamsSqlConverter', () => {

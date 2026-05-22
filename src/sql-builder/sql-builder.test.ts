@@ -160,7 +160,7 @@ describe('SqlBuilder', () => {
         const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
         builder.whereRaw('active = true');
         expect(builder.build()).toEqual({
-          sql: 'SELECT * FROM users WHERE active = true',
+          sql: 'SELECT * FROM users WHERE (active = true)',
           params: [],
         });
       });
@@ -529,7 +529,7 @@ describe('SqlBuilder', () => {
     it('should handle whereConditions and whereCondition', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder.whereConditions({
-        status: { eq: 'active' },
+        status: { equals: 'active' }, // 'eq' não é um operador válido — 'equals' é o correto
         age: { gt: 18 },
       });
       expect(builder.build()).toEqual({
@@ -558,10 +558,7 @@ describe('SqlBuilder', () => {
 
     it('should handle whereAnd', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
-      builder.whereAnd(
-        new ClauseEquals('status', 'active'),
-        new ClauseEquals('active', true)
-      );
+      builder.whereAnd(new ClauseEquals('status', 'active'), new ClauseEquals('active', true));
       expect(builder.build()).toEqual({
         sql: 'SELECT * FROM users WHERE ((status = $1 AND active = $2))',
         params: ['active', true],
@@ -590,9 +587,188 @@ describe('SqlBuilder', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       builder.whereEmpty('name');
       expect(builder.build()).toEqual({
-        sql: 'SELECT * FROM users',
+        sql: "SELECT * FROM users WHERE (name IS NULL OR name = '')",
         params: [],
       });
     });
   });
+
+  describe('new features, safety and DX improvements', () => {
+    it('should support parameterized whereRaw to prevent SQL injection', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereRaw('age > ? AND status = ?', [18, 'active']);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (age > $1 AND status = $2)',
+        params: [18, 'active'],
+      });
+    });
+
+    it('should reset builder to its original state using reset()', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder
+        .whereEquals('status', 'active')
+        .addOrder('asc', 'name')
+        .addGroup('status')
+        .addLimit(10)
+        .addOffset(5);
+
+      expect(builder.build().sql).toContain('WHERE');
+
+      builder.reset();
+
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users',
+        params: [],
+      });
+    });
+
+    it('should support toSQL() as a semantic alias for build()', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereEquals('id', 1);
+      expect(builder.toSQL()).toEqual(builder.build());
+    });
+
+    it('should return human-readable interpolated SQL using buildRaw() for debugging', () => {
+      const date = new Date('2026-05-22T00:00:00.000Z');
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users')
+        .whereEquals('name', "O'Connor")
+        .whereGreaterThan('created_at', date)
+        .whereEquals('active', true)
+        .whereIn('tags', ['admin', 'moderator']);
+
+      const raw = builder.buildRaw();
+      expect(raw).toContain("name = 'O''Connor'");
+      expect(raw).toContain(`created_at > '${date.toISOString()}'`);
+      expect(raw).toContain('active = true');
+      expect(raw).toContain("tags IN ('admin', 'moderator')");
+    });
+
+    it('should clone dynamically and preserve the exact subclass instance (polymorphism)', () => {
+      class CustomSqlBuilder<T> extends SqlBuilder<T> {
+        customMethod() {
+          return 'custom';
+        }
+      }
+
+      const original = new CustomSqlBuilder<TestTable>('SELECT * FROM users');
+      const cloned = original.clone();
+
+      expect(cloned).toBeInstanceOf(CustomSqlBuilder);
+      expect(cloned.customMethod()).toBe('custom');
+    });
+
+    it('should perform deep-like cloning allowing independent mutations', () => {
+      const original = new SqlBuilder<TestTable>('SELECT * FROM users').whereEquals('status', 'active');
+      const cloned = original.clone();
+
+      cloned.whereEquals('age', 18);
+
+      expect(original.build().sql).not.toContain('age =');
+      expect(cloned.build().sql).toContain('age =');
+    });
+
+    it('should support primitive boolean type in whereIn', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereIn('active', [true, false]);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (active IN ($1, $2))',
+        params: [true, false],
+      });
+    });
+
+    describe('whereCursor', () => {
+      it('should bypass cursor building if cursor is undefined or null', () => {
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereCursor(null, [
+          { field: 'id', direction: 'asc' },
+        ]);
+        expect(builder.build().sql).toBe('SELECT * FROM users');
+      });
+
+      it('should build cursor filter from a decoded object for a single column', () => {
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereCursor(
+          { id: 42 },
+          [{ field: 'id', direction: 'asc' }]
+        );
+
+        expect(builder.build()).toEqual({
+          sql: 'SELECT * FROM users WHERE (id > $1)',
+          params: [42],
+        });
+      });
+
+      it('should build cursor filter from a Base64 string for multiple columns', () => {
+        const cursorData = { created_at: '2026-05-22', id: 100 };
+        const cursorBase64 = Buffer.from(JSON.stringify(cursorData)).toString('base64');
+
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereCursor(cursorBase64, [
+          { field: 'created_at', direction: 'desc' },
+          { field: 'id', direction: 'asc' },
+        ]);
+
+        const result = builder.build();
+        expect(result.sql).toBe(
+          'SELECT * FROM users WHERE ((created_at < $1) OR (created_at = $3 AND id > $2))'
+        );
+        expect(result.params).toEqual(['2026-05-22', 100, '2026-05-22']);
+      });
+
+      it('should build cursor filter from a Base64 string with nested values structure (CursorPayload)', () => {
+        const cursorData = {
+          values: { created_at: '2026-05-22', id: 100 },
+          direction: 'next',
+          orderBy: { created_at: 'desc', id: 'asc' }
+        };
+        const cursorBase64 = Buffer.from(JSON.stringify(cursorData)).toString('base64');
+
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereCursor(cursorBase64, [
+          { field: 'created_at', direction: 'desc' },
+          { field: 'id', direction: 'asc' },
+        ]);
+
+        const result = builder.build();
+        expect(result.sql).toBe(
+          'SELECT * FROM users WHERE ((created_at < $1) OR (created_at = $3 AND id > $2))'
+        );
+        expect(result.params).toEqual(['2026-05-22', 100, '2026-05-22']);
+      });
+
+      it('should respect columnMapper when building cursor column names', () => {
+        const mapper = { createdAt: 'created_at', userId: 'user_id' };
+        interface MappedTable {
+          createdAt: Date;
+          userId: number;
+        }
+
+        const builder = new SqlBuilder<MappedTable>('SELECT * FROM users', mapper).whereCursor(
+          { createdAt: '2026-05-22', userId: 15 },
+          [
+            { field: 'createdAt', direction: 'desc' },
+            { field: 'userId', direction: 'asc' },
+          ]
+        );
+
+        const result = builder.build();
+        expect(result.sql).toBe(
+          'SELECT * FROM users WHERE ((created_at < $1) OR (created_at = $3 AND user_id > $2))'
+        );
+      });
+
+      it('should throw error when cursor base64 has invalid format', () => {
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+        expect(() =>
+          builder.whereCursor('!!!invalid_base64!!!', [{ field: 'id', direction: 'asc' }])
+        ).toThrow('Invalid cursor encoding');
+      });
+
+      it('should throw error when cursor object is missing a required order field', () => {
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+        expect(() =>
+          builder.whereCursor({ created_at: '2026-05-22' }, [
+            { field: 'created_at', direction: 'desc' },
+            { field: 'id', direction: 'asc' },
+          ])
+        ).toThrow('Cursor is missing value for field: id');
+      });
+    });
+  });
 });
+

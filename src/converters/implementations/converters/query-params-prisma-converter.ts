@@ -1,8 +1,8 @@
-import { QueryParamsOperator } from '../query-operator';
-import { QueryableFields } from '../types';
-import { PrismaVisitor, PrismaWhereClause } from './prisma-visitor';
-import { QueryParamsConverter } from './query-params-converter';
-import { IQueryParamsConverter } from './query-params-converter-interface';
+import { QueryParamsOperator } from '../../../query-operator';
+import { QueryableFields } from '../../../types';
+import { PrismaVisitor, PrismaWhereClause } from '../visitors/prisma-visitor';
+import { QueryParamsConverter } from '../../core/query-params-converter';
+import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
 
 export class QueryParamsPrismaConverter<T = unknown> implements IQueryParamsConverter<unknown> {
   private converter: QueryParamsConverter<T>;

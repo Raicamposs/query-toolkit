@@ -1,5 +1,5 @@
-import { QueryParamsOperator } from '../query-operator';
-import { QueryableFields } from '../types';
+import { QueryParamsOperator } from '../../query-operator';
+import { QueryableFields } from '../../types';
 import { OperatorVisitor } from './operator-visitor';
 
 /**

@@ -1,6 +1,6 @@
 import { isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
 import { parseRsqlValue } from '../../common/date-parser';
-import type { OperatorVisitor } from '../../converters/operator-visitor';
+import type { OperatorVisitor } from '../../converters';
 import { RsqlCondition } from '../../types';
 import { QueryParamsOperator } from '../query-params-operator';
 

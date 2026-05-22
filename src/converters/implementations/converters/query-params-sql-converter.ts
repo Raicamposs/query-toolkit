@@ -1,9 +1,9 @@
-import { QueryParamsOperator } from '../query-operator';
-import { Clause } from '../sql-builder';
-import { QueryableFields } from '../types';
-import { ClauseVisitor } from './clause-visitor';
-import { QueryParamsConverter } from './query-params-converter';
-import { IQueryParamsConverter } from './query-params-converter-interface';
+import { QueryParamsOperator } from '../../../query-operator';
+import { Clause } from '../../../sql-builder';
+import { QueryableFields } from '../../../types';
+import { QueryParamsConverter } from '../../core/query-params-converter';
+import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
+import { ClauseVisitor } from '../visitors/clause-visitor';
 
 export class QueryParamsSqlConverter<T = unknown> implements IQueryParamsConverter<Clause[]> {
   private converter: QueryParamsConverter<T>;

@@ -1,6 +1,6 @@
 import { Nullable } from '@raicamposs/toolkit';
 import { describe, expect, it } from 'vitest';
-import { OperatorVisitor } from '../converters/operator-visitor';
+import { OperatorVisitor } from '../converters';
 import { PrimitiveValueTypes } from '../sql-builder/core';
 import { RsqlCondition } from '../types';
 import { QueryParamsOperator } from './query-params-operator';

@@ -15,7 +15,7 @@ import {
   NotEqualsOperator,
   NotInOperator,
   UnknownOperator,
-} from '../query-operator';
+} from '../../../query-operator';
 import {
   ClauseArrayContains,
   ClauseArrayIsContainedBy,
@@ -32,7 +32,7 @@ import {
   ClauseNotEquals,
   ClauseNotILike,
   ClauseNotIn,
-} from '../sql-builder/implementations';
+} from '../../../sql-builder/implementations';
 import { ClauseVisitor } from './clause-visitor';
 
 describe('ClauseVisitor', () => {

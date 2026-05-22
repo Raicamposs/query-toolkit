@@ -12,7 +12,7 @@
 // Between (btw=) : btw
 
 import { Nullable } from '@raicamposs/toolkit';
-import type { OperatorVisitor } from '../converters/operator-visitor';
+import type { OperatorVisitor } from '../converters';
 import { PrimitiveValueTypes } from '../sql-builder/core';
 import { RsqlCondition } from '../types';
 import { OperatorSymbolType } from '../types/operator-symbol';
