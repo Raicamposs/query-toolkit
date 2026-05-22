@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EqualsOperator } from '../query-operator';
 import { QueryParamsParse } from './query-params-parse';
+import { OperatorRegistry } from './operator-registry';
 
 describe('QueryParamsParse', () => {
   it('should parse simple query parameters', () => {
@@ -30,5 +31,27 @@ describe('QueryParamsParse', () => {
     const result = parser.build();
 
     expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  it('should parse custom operators registered in OperatorRegistry', () => {
+    class CustomFakeOperator extends EqualsOperator {
+      constructor(rawValue: string) {
+        super(rawValue);
+      }
+    }
+
+    // Registrar o operador customizado
+    OperatorRegistry.register('fake=' as any, (params: string) => {
+      const [, value] = params.split('fake=');
+      return new CustomFakeOperator(`==${value}`);
+    });
+
+    const params = { field: 'fake=value' };
+    const parser = new QueryParamsParse(params);
+    const result = parser.build();
+
+    expect(result.field).toHaveLength(1);
+    expect(result.field[0]).toBeInstanceOf(CustomFakeOperator);
+    expect(result.field[0].value()).toBe('value');
   });
 });

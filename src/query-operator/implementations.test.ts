@@ -134,7 +134,7 @@ describe('Query Operators Implementations', () => {
 
   describe('InOperator', () => {
     it('should parse array values and query', () => {
-      const op = new InOperator('in=v1,v2');
+      const op = new InOperator(['v1', 'v2']);
       expect(op.value()).toEqual(['v1', 'v2']);
       expect(op.query()).toEqual({ in: ['v1', 'v2'] });
       op.accept(mockVisitor, 'field');
@@ -144,7 +144,7 @@ describe('Query Operators Implementations', () => {
 
   describe('NotInOperator', () => {
     it('should parse array values and query', () => {
-      const op = new NotInOperator('out=v1,v2');
+      const op = new NotInOperator(['v1', 'v2']);
       expect(op.value()).toEqual(['v1', 'v2']);
       expect(op.query()).toEqual({ notIn: ['v1', 'v2'] });
       op.accept(mockVisitor, 'field');

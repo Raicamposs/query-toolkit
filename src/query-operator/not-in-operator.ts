@@ -1,20 +1,19 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { parseRsqlValue } from '../common/date-parser';
 import { OperatorVisitor } from '../converters';
 import { RsqlCondition } from '../types';
 import { QueryParamsOperator } from './query-params-operator';
 
 export class NotInOperator extends QueryParamsOperator {
-  constructor(params: string) {
-    super('out=', params);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(public readonly values: any[]) {
+    super('out=', '');
+    if (!Array.isArray(values)) {
+      throw new Error('Values must be an array');
+    }
   }
 
   value() {
-    return this.getRawValue()
-      .split(',')
-      .map((item) => item.trim())
-      .filter((item) => item !== '')
-      .map((item) => parseRsqlValue(item) as any);
+    return this.values;
   }
 
   query(): Nullable<RsqlCondition> {

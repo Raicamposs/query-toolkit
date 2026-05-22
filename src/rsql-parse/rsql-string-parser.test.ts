@@ -11,7 +11,7 @@ describe('RsqlStringParser', () => {
     const parser = new RsqlStringParser('name==John;age=gt=18');
     expect(parser.parse()).toEqual({
       name: '==John',
-      age: 'gt=18'
+      age: 'gt=18',
     });
   });
 
@@ -31,7 +31,7 @@ describe('RsqlStringParser', () => {
   it('should parse multiple filters with OR (,)', () => {
     const parser = new RsqlStringParser('status==ACTIVE,status==PENDING');
     expect(parser.parse()).toEqual({
-      status: ['==ACTIVE', '==PENDING']
+      status: ['==ACTIVE', '==PENDING'],
     });
   });
 
@@ -39,7 +39,7 @@ describe('RsqlStringParser', () => {
     const parser = new RsqlStringParser('tags=@>tag1,tag2;price=btw=10,100');
     expect(parser.parse()).toEqual({
       tags: '@>tag1,tag2',
-      price: 'btw=10,100'
+      price: 'btw=10,100',
     });
   });
 
@@ -51,7 +51,16 @@ describe('RsqlStringParser', () => {
     const parser = new RsqlStringParser(' name == John ; age =gt= 18 ');
     expect(parser.parse()).toEqual({
       name: '== John',
-      age: 'gt= 18'
+      age: 'gt= 18',
+    });
+  });
+
+  it('should not confuse fields ending in "in" (like origin) with the "in=" operator', () => {
+    const parser = new RsqlStringParser('origin==Brazil;roast==MEDIUM;price=btw=20,60');
+    expect(parser.parse()).toEqual({
+      origin: '==Brazil',
+      roast: '==MEDIUM',
+      price: 'btw=20,60',
     });
   });
 });
