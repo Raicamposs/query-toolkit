@@ -265,7 +265,7 @@ export class SqlBuilder<Table> {
    * @param field - Field name
    */
   whereEmpty(field: QueryableFields<Table>): this {
-    return this.andFilter(new ClauseEmpty(this.column(field)));
+    return this.andFilter(new ClauseEmpty());
   }
 
   /**

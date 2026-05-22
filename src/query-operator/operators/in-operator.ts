@@ -1,5 +1,5 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { OperatorVisitor } from '../converters';
+import { OperatorVisitor } from '../../converters';
 import { RsqlCondition } from '../../types';
 import { QueryParamsOperator } from '../query-params-operator';
 
