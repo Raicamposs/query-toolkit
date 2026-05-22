@@ -352,6 +352,26 @@ describe('SqlBuilder', () => {
       const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
       expect(() => builder.addOffset(1.5)).toThrow(TypeError);
     });
+
+    it('should ignore null or undefined limit', () => {
+      const builder1 = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder1.addLimit(null);
+      expect(builder1.build().sql).not.toContain('LIMIT');
+
+      const builder2 = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder2.addLimit(undefined);
+      expect(builder2.build().sql).not.toContain('LIMIT');
+    });
+
+    it('should ignore null or undefined offset', () => {
+      const builder1 = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder1.addOffset(null);
+      expect(builder1.build().sql).not.toContain('OFFSET');
+
+      const builder2 = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder2.addOffset(undefined);
+      expect(builder2.build().sql).not.toContain('OFFSET');
+    });
   });
 
   describe('static from()', () => {
@@ -469,6 +489,52 @@ describe('SqlBuilder', () => {
         const cloned = builder.clone();
 
         expect(() => cloned.addLimit(6)).toThrow(RangeError);
+      });
+    });
+  });
+
+  describe('static count()', () => {
+    it('should create a count query instance', () => {
+      const builder = SqlBuilder.count<TestTable>('users');
+      expect(builder).toBeInstanceOf(SqlBuilder);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT COUNT(*) as count FROM users',
+        params: [],
+      });
+    });
+  });
+
+  describe('additional where methods', () => {
+    it('should handle whereClauses with multiple clauses', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereClauses([
+        new ClauseEquals('status', 'active'),
+        new ClauseEquals('active', true),
+      ]);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (status = $1) AND (active = $2)',
+        params: ['active', true],
+      });
+    });
+
+    it('should handle whereBetweenOperator', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereBetweenOperator('age', { gte: 18, lte: 65 });
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (age BETWEEN $1 AND $2)',
+        params: [18, 65],
+      });
+    });
+
+    it('should handle whereConditions and whereCondition', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereConditions({
+        status: { eq: 'active' },
+        age: { gt: 18 },
+      });
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE ((status = $1)) AND ((age > $2))',
+        params: ['active', 18],
       });
     });
   });
