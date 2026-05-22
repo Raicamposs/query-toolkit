@@ -7,9 +7,13 @@ import { SQL_KEYWORDS } from './core/sql-keywords';
 import { TransformFunction } from './core/transform-function';
 import {
   BetweenParam,
+  ClauseAnd,
+  ClauseArrayIsContainedBy,
+  ClauseArrayOverlap,
   ClauseBetween,
   ClauseCondition,
   ClauseContains,
+  ClauseEmpty,
   ClauseEquals,
   ClauseGreaterThan,
   ClauseGreaterThanOrEquals,
@@ -20,6 +24,8 @@ import {
   ClauseLike,
   ClauseNotEquals,
   ClauseNotExists,
+  ClauseNotILike,
+  ClauseNotIn,
   ClauseOr,
   Condition,
 } from './implementations';
@@ -92,7 +98,7 @@ export class SqlBuilder<Table> {
   }
 
   /** Filter Elements - Add where clause filters */
-  private andFilter(value: Clause) {
+  private andFilter(value: Clause): this {
     if (this.where.length >= this.config.maxWhereClauses) {
       throw new RangeError(`Maximum WHERE clauses exceeded: ${this.config.maxWhereClauses}`);
     }
@@ -101,22 +107,22 @@ export class SqlBuilder<Table> {
     return this;
   }
 
-  whereClause(clause: Clause) {
+  whereClause(clause: Clause): this {
     return this.andFilter(clause);
   }
 
-  whereClauses(clauses: Clause[]) {
+  whereClauses(clauses: Clause[]): this {
     for (const clause of clauses) {
       this.whereClause(clause);
     }
     return this;
   }
 
-  whereExists(sql: string) {
+  whereExists(sql: string): this {
     return this.andFilter(new ClauseExists(sql));
   }
 
-  whereNotExists(sql: string) {
+  whereNotExists(sql: string): this {
     return this.andFilter(new ClauseNotExists(sql));
   }
 
@@ -125,8 +131,17 @@ export class SqlBuilder<Table> {
    * @param field The field to filter on.
    * @param compareFields The array of values to check against.
    */
-  whereIn(field: QueryableFields<Table>, compareFields: string[] | number[]) {
+  whereIn(field: QueryableFields<Table>, compareFields: string[] | number[]): this {
     return this.andFilter(new ClauseIn(this.column(field), compareFields));
+  }
+
+  /**
+   * Adds a WHERE NOT IN clause.
+   * @param field The field to filter on.
+   * @param compareFields The array of values to exclude.
+   */
+  whereNotIn(field: QueryableFields<Table>, compareFields: string[] | number[]): this {
+    return this.andFilter(new ClauseNotIn(this.column(field), compareFields));
   }
 
   /**
@@ -134,7 +149,7 @@ export class SqlBuilder<Table> {
    * @param field The field to filter on.
    * @param value The pattern to match (e.g., "%value%").
    */
-  whereLike(field: QueryableFields<Table>, value: string) {
+  whereLike(field: QueryableFields<Table>, value: string): this {
     return this.andFilter(new ClauseLike(this.column(field), value));
   }
 
@@ -143,8 +158,17 @@ export class SqlBuilder<Table> {
    * @param field The field to filter on.
    * @param value The pattern to match.
    */
-  whereILike(field: QueryableFields<Table>, value: string) {
+  whereILike(field: QueryableFields<Table>, value: string): this {
     return this.andFilter(new ClauseILike(this.column(field), value));
+  }
+
+  /**
+   * Adds a WHERE NOT ILIKE clause (case-insensitive NOT LIKE).
+   * @param field The field to filter on.
+   * @param value The pattern to match.
+   */
+  whereNotILike(field: QueryableFields<Table>, value: string): this {
+    return this.andFilter(new ClauseNotILike(this.column(field), value));
   }
 
   /**
@@ -153,23 +177,23 @@ export class SqlBuilder<Table> {
    * @param start The start value (inclusive).
    * @param end The end value (inclusive).
    */
-  whereBetween(field: QueryableFields<Table>, start: BetweenParam, end: BetweenParam) {
+  whereBetween(field: QueryableFields<Table>, start: BetweenParam, end: BetweenParam): this {
     return this.andFilter(new ClauseBetween(this.column(field), start, end));
   }
 
-  whereGreaterThan(field: QueryableFields<Table>, value: Date | number) {
+  whereGreaterThan(field: QueryableFields<Table>, value: Date | number): this {
     return this.andFilter(new ClauseGreaterThan(this.column(field), value));
   }
 
-  whereGreaterThanOrEquals(field: QueryableFields<Table>, value: Date | number) {
+  whereGreaterThanOrEquals(field: QueryableFields<Table>, value: Date | number): this {
     return this.andFilter(new ClauseGreaterThanOrEquals(this.column(field), value));
   }
 
-  whereLessThan(field: QueryableFields<Table>, value: Date | number) {
+  whereLessThan(field: QueryableFields<Table>, value: Date | number): this {
     return this.andFilter(new ClauseLessThan(this.column(field), value));
   }
 
-  whereLessThanOrEquals(field: QueryableFields<Table>, value: Date | number) {
+  whereLessThanOrEquals(field: QueryableFields<Table>, value: Date | number): this {
     return this.andFilter(new ClauseLessThanOrEquals(this.column(field), value));
   }
 
@@ -182,7 +206,7 @@ export class SqlBuilder<Table> {
       gte: Date | number;
       lte: Date | number;
     }
-  ) {
+  ): this {
     return this.andFilter(new ClauseBetween(this.column(field), operator.gte, operator.lte));
   }
 
@@ -191,7 +215,7 @@ export class SqlBuilder<Table> {
    * @param field The field to filter on.
    * @param value The value to match.
    */
-  whereEquals(field: QueryableFields<Table>, value: string | number | boolean) {
+  whereEquals(field: QueryableFields<Table>, value: string | number | boolean): this {
     return this.andFilter(new ClauseEquals(this.column(field), value));
   }
 
@@ -200,7 +224,7 @@ export class SqlBuilder<Table> {
    * @param field The field to filter on.
    * @param value The value to exclude.
    */
-  whereNotEquals(field: QueryableFields<Table>, value: string | number | boolean) {
+  whereNotEquals(field: QueryableFields<Table>, value: string | number | boolean): this {
     return this.andFilter(new ClauseNotEquals(this.column(field), value));
   }
 
@@ -214,8 +238,34 @@ export class SqlBuilder<Table> {
     field: QueryableFields<Table>,
     compareFields: string[],
     containment?: '<@' | '@>'
-  ) {
+  ): this {
     return this.andFilter(new ClauseContains(this.column(field), compareFields, containment));
+  }
+
+  /**
+   * Filter where field is contained by a specified array
+   * @param field - Field name
+   * @param compareFields - Array of values
+   */
+  whereArrayIsContainedBy(field: QueryableFields<Table>, compareFields: string[]): this {
+    return this.andFilter(new ClauseArrayIsContainedBy(this.column(field), compareFields));
+  }
+
+  /**
+   * Filter where field array overlaps with another array
+   * @param field - Field name
+   * @param compareFields - Array of values
+   */
+  whereArrayOverlap(field: QueryableFields<Table>, compareFields: string[]): this {
+    return this.andFilter(new ClauseArrayOverlap(this.column(field), compareFields));
+  }
+
+  /**
+   * Filter checking if a field is empty (NULL or empty string/array representation)
+   * @param field - Field name
+   */
+  whereEmpty(field: QueryableFields<Table>): this {
+    return this.andFilter(new ClauseEmpty(this.column(field)));
   }
 
   /**
@@ -226,7 +276,7 @@ export class SqlBuilder<Table> {
   whereConditions(
     values: Partial<Record<QueryableFields<Table>, Condition>>,
     transform?: TransformFunction
-  ) {
+  ): this {
     for (const [key, value] of Object.entries(values)) {
       if (value) {
         this.whereCondition(key as QueryableFields<Table>, value as Condition, transform);
@@ -241,11 +291,15 @@ export class SqlBuilder<Table> {
    * @param value The condition (e.g., { gt: 10, lte: 20 }).
    * @param transform Optional value transformer.
    */
-  whereCondition(field: QueryableFields<Table>, value: Condition, transform?: TransformFunction) {
+  whereCondition(
+    field: QueryableFields<Table>,
+    value: Condition,
+    transform?: TransformFunction
+  ): this {
     return this.andFilter(new ClauseCondition(field.toString(), value, transform));
   }
 
-  whereRaw(raw: string) {
+  whereRaw(raw: string): this {
     if (!isEmpty(raw)) this.where = [...this.where, raw];
     return this;
   }
@@ -254,8 +308,16 @@ export class SqlBuilder<Table> {
    * Adds an OR clause containing multiple sub-clauses.
    * @param value List of clauses to join with OR.
    */
-  orFilter(...value: Clause[]) {
+  orFilter(...value: Clause[]): this {
     return this.andFilter(new ClauseOr(...value));
+  }
+
+  /**
+   * Adds an AND clause containing multiple sub-clauses.
+   * @param clauses List of clauses to join with AND.
+   */
+  whereAnd(...clauses: Clause[]): this {
+    return this.andFilter(new ClauseAnd(...clauses));
   }
 
   /**
@@ -263,7 +325,7 @@ export class SqlBuilder<Table> {
    * @param sort Sort direction ('asc' or 'desc').
    * @param value List of fields to sort by.
    */
-  addOrder(sort: 'asc' | 'desc', ...value: Array<QueryableFields<Table>>) {
+  addOrder(sort: 'asc' | 'desc', ...value: Array<QueryableFields<Table>>): this {
     if (this.order.length + value.length > this.config.maxOrderByClauses) {
       throw new RangeError(`Maximum ORDER BY clauses exceeded: ${this.config.maxOrderByClauses}`);
     }
@@ -276,7 +338,7 @@ export class SqlBuilder<Table> {
    * Adds GROUP BY clauses.
    * @param value List of fields to group by.
    */
-  addGroup(...value: Array<QueryableFields<Table>>) {
+  addGroup(...value: Array<QueryableFields<Table>>): this {
     if (this.group.length + value.length > this.config.maxGroupByClauses) {
       throw new RangeError(`Maximum GROUP BY clauses exceeded: ${this.config.maxGroupByClauses}`);
     }
@@ -289,7 +351,7 @@ export class SqlBuilder<Table> {
    * Sets the LIMIT for the query.
    * @param limit Maximum number of records to return.
    */
-  addLimit(limit: number | null | undefined) {
+  addLimit(limit: number | null | undefined): this {
     if (isNullOrUndefined(limit)) {
       this.limit = SQL_BUILDER_CONSTANTS.NO_LIMIT;
       return this;
@@ -312,7 +374,7 @@ export class SqlBuilder<Table> {
    * Sets the OFFSET for the query.
    * @param offset Number of records to skip.
    */
-  addOffset(offset: number | null | undefined) {
+  addOffset(offset: number | null | undefined): this {
     if (isNullOrUndefined(offset)) {
       this.offset = SQL_BUILDER_CONSTANTS.NO_OFFSET;
       return this;
@@ -327,6 +389,7 @@ export class SqlBuilder<Table> {
     this.offset = offset;
     return this;
   }
+
 
   /**
    * Builds the SQL query with parameterized values (prepared statement format).

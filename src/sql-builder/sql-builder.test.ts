@@ -537,5 +537,62 @@ describe('SqlBuilder', () => {
         params: ['active', 18],
       });
     });
+
+    it('should handle whereNotIn', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereNotIn('status', ['inactive', 'deleted']);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (NOT status IN ($1, $2))',
+        params: ['inactive', 'deleted'],
+      });
+    });
+
+    it('should handle whereNotILike', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereNotILike('name', '%admin%');
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (name NOT ILIKE $1)',
+        params: ['%admin%'],
+      });
+    });
+
+    it('should handle whereAnd', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereAnd(
+        new ClauseEquals('status', 'active'),
+        new ClauseEquals('active', true)
+      );
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE ((status = $1 AND active = $2))',
+        params: ['active', true],
+      });
+    });
+
+    it('should handle whereArrayIsContainedBy', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereArrayIsContainedBy('tags', ['user', 'admin']);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (tags <@ ARRAY[$1, $2])',
+        params: ['user', 'admin'],
+      });
+    });
+
+    it('should handle whereArrayOverlap', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereArrayOverlap('tags', ['user', 'guest']);
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users WHERE (tags && ARRAY[$1, $2])',
+        params: ['user', 'guest'],
+      });
+    });
+
+    it('should handle whereEmpty', () => {
+      const builder = new SqlBuilder<TestTable>('SELECT * FROM users');
+      builder.whereEmpty('name');
+      expect(builder.build()).toEqual({
+        sql: 'SELECT * FROM users',
+        params: [],
+      });
+    });
   });
 });
