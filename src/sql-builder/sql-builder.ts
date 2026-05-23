@@ -5,10 +5,7 @@ import { SqlBuilderConfig } from './core/config';
 import { SQL_BUILDER_CONSTANTS } from './core/constants';
 import { FilterBuilder } from './core/filter-builder';
 import { PrimitiveValueTypes } from './core/primitive-value';
-import {
-  DuplicateJoinError,
-  MaxClausesExceededError,
-} from './core/sql-builder-errors';
+import { DuplicateJoinError, MaxClausesExceededError } from './core/sql-builder-errors';
 import { SQL_KEYWORDS } from './core/sql-keywords';
 
 /** Internal representation of a SELECT column entry */
@@ -121,11 +118,14 @@ export class SqlBuilder<Table> extends FilterBuilder<Table> {
     columnMapper?: Partial<Record<keyof T & string, string>>,
     config?: Partial<SqlBuilderConfig>
   ): SqlBuilder<T> {
-    const builder = new SqlBuilder<T>(`SELECT COUNT(*) as count FROM ${table}`, columnMapper, config);
+    const builder = new SqlBuilder<T>(
+      `SELECT COUNT(*) as count FROM ${table}`,
+      columnMapper,
+      config
+    );
     builder.isCountQuery = true;
     return builder;
   }
-
 
   // ─── Column Selection ─────────────────────────────────────────────────────
 
@@ -184,12 +184,7 @@ export class SqlBuilder<Table> extends FilterBuilder<Table> {
    * @param leftColumn The left-hand column in the ON clause (e.g. "users.id").
    * @param rightColumn The right-hand column in the ON clause (e.g. "orders.user_id").
    */
-  private addJoin(
-    type: string,
-    table: string,
-    leftColumn: string,
-    rightColumn: string
-  ): this {
+  private addJoin(type: string, table: string, leftColumn: string, rightColumn: string): this {
     if (this.joins.length >= this.config.maxJoins) {
       throw new MaxClausesExceededError(`Maximum JOIN clauses exceeded: ${this.config.maxJoins}`);
     }
@@ -420,9 +415,8 @@ export class SqlBuilder<Table> extends FilterBuilder<Table> {
     }
 
     const rawSql = parts.join(' ');
-    const sql = this.config.prettyPrint !== false
-      ? rawSql.replace(/\s+/g, ' ').trim()
-      : rawSql.trim();
+    const sql =
+      this.config.prettyPrint !== false ? rawSql.replace(/\s+/g, ' ').trim() : rawSql.trim();
 
     const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const durationMs = endTime - startTime;
@@ -517,7 +511,11 @@ export class SqlBuilder<Table> extends FilterBuilder<Table> {
       columnMapper?: Partial<Record<string, string>>,
       config?: Partial<SqlBuilderConfig>
     ) => this;
-    const cloned = new constructor(this.sql, this.columnMapper as Partial<Record<string, string>>, this.config);
+    const cloned = new constructor(
+      this.sql,
+      this.columnMapper as Partial<Record<string, string>>,
+      this.config
+    );
     cloned.where = [...this.where];
     cloned.order = [...this.order];
     cloned.group = [...this.group];

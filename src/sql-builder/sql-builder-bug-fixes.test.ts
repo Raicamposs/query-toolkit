@@ -65,9 +65,7 @@ describe('SqlBuilder — resolveSelectClause() usa sqlFromIndex cacheado', () =>
 
 describe('SqlBuilder — whereRaw() respeita maxWhereClauses', () => {
   it('should add a raw where clause to the query correctly', () => {
-    const { sql, params } = SqlBuilder.from<User>('users')
-      .whereRaw('age > $1', [18])
-      .build();
+    const { sql, params } = SqlBuilder.from<User>('users').whereRaw('age > $1', [18]).build();
 
     expect(sql).toBe('SELECT * FROM users WHERE (age > $1)');
     expect(params).toEqual([18]);
@@ -87,9 +85,7 @@ describe('SqlBuilder — whereRaw() respeita maxWhereClauses', () => {
     builder.whereEquals('active', true); // 1
     builder.whereRaw('age > $1', [18]); // 2 — atinge o limite
 
-    expect(() => builder.whereEquals('id', 1)).toThrowError(
-      /Maximum WHERE clauses exceeded: 2/
-    );
+    expect(() => builder.whereEquals('id', 1)).toThrowError(/Maximum WHERE clauses exceeded: 2/);
   });
 
   it('should ignore empty string in whereRaw', () => {
@@ -98,9 +94,7 @@ describe('SqlBuilder — whereRaw() respeita maxWhereClauses', () => {
   });
 
   it('should work with whereRaw and no params', () => {
-    const { sql, params } = SqlBuilder.from<User>('users')
-      .whereRaw('active = true')
-      .build();
+    const { sql, params } = SqlBuilder.from<User>('users').whereRaw('active = true').build();
     expect(sql).toBe('SELECT * FROM users WHERE (active = true)');
     expect(params).toEqual([]);
   });
@@ -120,8 +114,7 @@ describe('SqlBuilder — whereExists() mensagem de erro sem ellipsis espúrio', 
   });
 
   it('should add "..." only when the invalid subquery exceeds 50 characters', () => {
-    const longInvalidSql =
-      'DELETE FROM very_long_table_name WHERE some_column = some_value_here';
+    const longInvalidSql = 'DELETE FROM very_long_table_name WHERE some_column = some_value_here';
     const builder = SqlBuilder.from<User>('users');
     builder.whereExists(longInvalidSql);
     expect(() => builder.build()).toThrowError(/\.\.\.$/);
@@ -144,4 +137,3 @@ describe('SqlBuilder — whereExists() mensagem de erro sem ellipsis espúrio', 
     );
   });
 });
-

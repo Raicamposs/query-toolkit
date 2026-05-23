@@ -29,17 +29,12 @@ describe('SqlBuilder — select()', () => {
   });
 
   it('should apply columnMapper when selecting mapped fields', () => {
-    const { sql } = SqlBuilder.from<User>('users', columnMapper)
-      .select('id', 'createdAt')
-      .build();
+    const { sql } = SqlBuilder.from<User>('users', columnMapper).select('id', 'createdAt').build();
     expect(sql).toBe('SELECT id, created_at FROM users');
   });
 
   it('should support incremental select() calls (chaining)', () => {
-    const { sql } = SqlBuilder.from<User>('users')
-      .select('id')
-      .select('name', 'email')
-      .build();
+    const { sql } = SqlBuilder.from<User>('users').select('id').select('name', 'email').build();
     expect(sql).toBe('SELECT id, name, email FROM users');
   });
 });
@@ -51,17 +46,13 @@ describe('SqlBuilder — selectRaw()', () => {
   });
 
   it('should add an aliased raw expression', () => {
-    const { sql } = SqlBuilder.from<User>('users')
-      .selectRaw('LOWER(email)', 'email_lower')
-      .build();
+    const { sql } = SqlBuilder.from<User>('users').selectRaw('LOWER(email)', 'email_lower').build();
     expect(sql).toBe('SELECT LOWER(email) AS email_lower FROM users');
   });
 
   it('should NOT apply columnMapper to selectRaw expressions', () => {
     // "createdAt" should remain as-is — caller is responsible
-    const { sql } = SqlBuilder.from<User>('users', columnMapper)
-      .selectRaw('createdAt')
-      .build();
+    const { sql } = SqlBuilder.from<User>('users', columnMapper).selectRaw('createdAt').build();
     expect(sql).toBe('SELECT createdAt FROM users');
   });
 
@@ -163,9 +154,7 @@ describe('SqlBuilder — joinRaw()', () => {
     const { sql } = SqlBuilder.from<User>('users')
       .joinRaw('INNER JOIN tags t ON t.id = ANY(users.tag_ids)')
       .build();
-    expect(sql).toBe(
-      'SELECT * FROM users INNER JOIN tags t ON t.id = ANY(users.tag_ids)'
-    );
+    expect(sql).toBe('SELECT * FROM users INNER JOIN tags t ON t.id = ANY(users.tag_ids)');
   });
 
   it('should allow joinRaw() for the same table multiple times (no duplicate check)', () => {
@@ -179,22 +168,14 @@ describe('SqlBuilder — joinRaw()', () => {
 
 describe('SqlBuilder — duplicate JOIN detection', () => {
   it('should throw RangeError when the same table is joined twice via join()', () => {
-    const builder = SqlBuilder.from<User>('users').join(
-      'orders',
-      'users.id',
-      'orders.user_id'
-    );
+    const builder = SqlBuilder.from<User>('users').join('orders', 'users.id', 'orders.user_id');
     expect(() => builder.join('orders', 'users.id', 'orders.user_id')).toThrowError(
       /Duplicate JOIN detected/
     );
   });
 
   it('should throw RangeError for duplicate table even with different JOIN types', () => {
-    const builder = SqlBuilder.from<User>('users').join(
-      'orders',
-      'users.id',
-      'orders.user_id'
-    );
+    const builder = SqlBuilder.from<User>('users').join('orders', 'users.id', 'orders.user_id');
     expect(() => builder.leftJoin('orders', 'users.id', 'orders.user_id')).toThrowError(
       /Duplicate JOIN detected/
     );
@@ -224,9 +205,9 @@ describe('SqlBuilder — maxJoins config', () => {
     const builder = SqlBuilder.from<User>('users', undefined, { maxJoins: 1 }).joinRaw(
       'LEFT JOIN orders o ON o.user_id = users.id'
     );
-    expect(() =>
-      builder.joinRaw('LEFT JOIN profiles p ON p.user_id = users.id')
-    ).toThrowError(/Maximum JOIN clauses exceeded: 1/);
+    expect(() => builder.joinRaw('LEFT JOIN profiles p ON p.user_id = users.id')).toThrowError(
+      /Maximum JOIN clauses exceeded: 1/
+    );
   });
 });
 
@@ -261,11 +242,7 @@ describe('SqlBuilder — build() com JOIN + WHERE + ORDER + LIMIT (ordem correta
 
 describe('SqlBuilder — clone() copia joins e select corretamente', () => {
   it('should copy joins to the cloned instance', () => {
-    const original = SqlBuilder.from<User>('users').join(
-      'orders',
-      'users.id',
-      'orders.user_id'
-    );
+    const original = SqlBuilder.from<User>('users').join('orders', 'users.id', 'orders.user_id');
     const cloned = original.clone();
     expect(cloned.build().sql).toContain('JOIN orders');
   });

@@ -117,6 +117,32 @@ const sqlConverter = new QueryParamsSqlConverter(operators);
 const clauses = sqlConverter.build(); // Record<string, Clause[]>
 ```
 
+### 5. Pagination (Classic & Cursor)
+
+Robust and dynamic pagination using both **Classic** (offset/limit) and **Cursor-based** (bidirectional, minified base64) strategies.
+
+```typescript
+import { CursorPage, ClassicPage } from '@raicamposs/query-toolkit';
+
+// A. Cursor Pagination (Highly performant for infinite scrolls & large datasets)
+// The library natively decodes, encodes, and minimizes the cursors strictly to the requested columns.
+const cursorPagination = new CursorPage(20, 'eyJ2Ijp7ImlkIjoyfSwiZCI6MSwibyI6eyJpZCI6MX19');
+
+// ... Pass the pagination object down to the repository
+const { data, hasNext, hasPrev, nextCursor, prevCursor } = CursorPage.processResult(
+  rawData, 
+  cursorPagination.limit, 
+  cursorDirection, 
+  orderBy, // base properties for sorting (e.g. { price: 'asc' })
+  hasCurrentCursor,
+  'id' // Configurable primaryKey (tie-breaker)
+);
+
+// B. Classic Pagination (Traditional Offset/Limit UI)
+const classicPagination = new ClassicPage(20, 2); // limit=20, page=2
+console.log(classicPagination.offset); // 20
+```
+
 ## 🚀 Advanced Usage
 
 ### 1. Type-Safe Querying

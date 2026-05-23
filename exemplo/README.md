@@ -115,16 +115,17 @@ Listagem com suporte a ordenação, paginação e filtros RSQL flexíveis passad
 | `tags` | `string` | Filtro RSQL ou operadores nativos de array (ex: `has=chocolate`) | — |
 | `sort` | `string` | Campo + direção de ordenação (ex: `price:asc`) | — |
 | `limit` | `number` | Limite de registros (1–100) | `20` |
-| `offset` | `number` | Deslocamento de paginação | `0` |
+| `offset` | `number` | Deslocamento de paginação (Classic Pagination) | `0` |
+| `cursor` | `string` | Cursor base64 (Cursor Pagination bidirecional) | — |
 
-**Resposta:**
+**Resposta (usando Cursor Pagination):**
 ```json
 {
   "data": [...],
   "meta": {
-    "total": 12,
     "limit": 20,
-    "offset": 0
+    "nextCursor": "eyJ2Ijp7ImlkIjoyfSwiZCI6MSwibyI6eyJpZCI6MX19",
+    "prevCursor": "eyJ2Ijp7ImlkIjoyfSwiZCI6MCwibyI6eyJpZCI6MX19"
   }
 }
 ```
@@ -271,9 +272,15 @@ curl "http://localhost:3000/coffees?price=btw=30,70&sort=price:asc"
 curl "http://localhost:3000/coffees?roast=out=[LIGHT,MEDIUM]"
 ```
 
-### Paginação: página 2 com 3 itens por página
+### Paginação Clássica (Offset/Limit)
 ```bash
 curl "http://localhost:3000/coffees?limit=3&offset=3"
+```
+
+### Paginação com Cursores (Alta Performance)
+```bash
+# O cursor é um base64 retornado pelo prevCursor ou nextCursor do endpoint
+curl "http://localhost:3000/coffees?limit=3&cursor=eyJ2Ijp7ImlkIjoyfSwiZCI6MSwibyI6eyJpZCI6MX19"
 ```
 
 

@@ -279,7 +279,7 @@ export abstract class FilterBuilder<Table> {
         // eslint-disable-next-line no-console
         console.warn(
           `[SqlBuilder Security Warning] Potential SQL Injection or unparameterized literal detected in raw expression: "${sql}". ` +
-          `Consider using parameterized inputs (placeholders like $1) instead of hardcoding literals inside raw clauses.`
+            `Consider using parameterized inputs (placeholders like $1) instead of hardcoding literals inside raw clauses.`
         );
       }
     }
@@ -312,7 +312,9 @@ export abstract class FilterBuilder<Table> {
     jsonValue: Record<string, unknown> | unknown[] | string | number | boolean
   ): this {
     const boundValue = typeof jsonValue === 'object' ? JSON.stringify(jsonValue) : jsonValue;
-    return this.andFilter(new ClauseRaw(`${this.column(field)} @> ?`, [boundValue as PrimitiveValueTypes]));
+    return this.andFilter(
+      new ClauseRaw(`${this.column(field)} @> ?`, [boundValue as PrimitiveValueTypes])
+    );
   }
 
   /**
@@ -349,7 +351,9 @@ export abstract class FilterBuilder<Table> {
       pathExpr += ` ${op} '${parts[i]}'`;
     }
 
-    return this.andFilter(new ClauseRaw(`${pathExpr} ${operator} ?`, [value as PrimitiveValueTypes]));
+    return this.andFilter(
+      new ClauseRaw(`${pathExpr} ${operator} ?`, [value as PrimitiveValueTypes])
+    );
   }
 
   /**
@@ -384,9 +388,7 @@ export abstract class FilterBuilder<Table> {
       return this;
     }
 
-    const decodedCursor = typeof cursor === 'string'
-      ? this.decodeCursorString(cursor)
-      : cursor;
+    const decodedCursor = typeof cursor === 'string' ? this.decodeCursorString(cursor) : cursor;
 
     // Suporta tanto o payload encapsulado do CursorPage/CursorCodec (propriedade values)
     // quanto um objeto plano chave-valor para retrocompatibilidade
@@ -427,9 +429,7 @@ export abstract class FilterBuilder<Table> {
       const json = Buffer.from(raw, 'base64').toString('utf-8');
       return JSON.parse(json) as Record<string, unknown>;
     } catch {
-      throw new InvalidCursorError(
-        'Invalid cursor encoding. Must be a valid Base64 JSON string'
-      );
+      throw new InvalidCursorError('Invalid cursor encoding. Must be a valid Base64 JSON string');
     }
   }
 }

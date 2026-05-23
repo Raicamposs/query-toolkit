@@ -47,4 +47,3 @@ export class DuplicateJoinError extends RangeError {
 export class InvalidCursorError extends SqlBuilderError {
   override readonly name: string = 'InvalidCursorError';
 }
-

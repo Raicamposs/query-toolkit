@@ -2,15 +2,13 @@ import { QueryParamsOperator } from '../../query-operator';
 import { QueryableFields } from '../../types';
 import { OperatorVisitor } from './operator-visitor';
 
+type Operator<T> = Record<QueryableFields<T>, QueryParamsOperator | QueryParamsOperator[]>;
+
 /**
  * Classe auxiliar para converter múltiplas instâncias de QueryParamsOperator em diferentes formatos.
  */
 export class QueryParamsConverter<T = unknown> {
-  constructor(
-    private readonly operators: Partial<
-      Record<QueryableFields<T>, QueryParamsOperator | QueryParamsOperator[]>
-    >
-  ) {}
+  constructor(private readonly operators: Partial<Operator<T>>) {}
 
   /**
    * Converte os operadores usando o visitor fornecido.

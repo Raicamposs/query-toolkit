@@ -6,7 +6,13 @@
  */
 
 import { Coffee } from '@prisma/client';
-import { QueryParamsSqlConverter, SqlBuilder } from '@raicamposs/query-toolkit';
+import {
+  CursorPage,
+  QueryParamsSqlConverter,
+  SqlBuilder,
+  applyCursor,
+} from '@raicamposs/query-toolkit';
+import { ObjectEntries } from '@raicamposs/toolkit';
 import { pool } from '../../database';
 import { CreateCoffeeData } from '../dto/create-coffee-data';
 import type {
@@ -19,34 +25,44 @@ import type {
  * Implementação PG puro do repositório de cafés
  */
 export class CoffeeRepositoryPg implements ICoffeeRepository {
-  async list(params: ListCoffeesParams): Promise<ListCoffeesResult> {
-    const { limit, offset, sort: _sort, ...filters } = params;
-    const converter = new QueryParamsSqlConverter(filters);
-    const clauses = Object.values(converter.build()).flat();
+  async list(queryParams: ListCoffeesParams): Promise<ListCoffeesResult> {
+    const filterParams = (queryParams.params || {}) as Record<string, unknown>;
 
-    const builder = SqlBuilder.from<Coffee>('coffee')
-      .whereClauses(clauses)
-      .addLimit(limit)
-      .addOffset(offset);
+    const sort = queryParams.sort;
+    const pagination = queryParams.pagination || new CursorPage(20);
 
-    const countBuilder = SqlBuilder.count<Coffee>('coffee')
-      .whereClauses(clauses);
+    const converter = new QueryParamsSqlConverter(filterParams);
+    const query = converter.build();
+    const orderBy = converter.sort(sort);
+
+    const builder = SqlBuilder.from<Coffee>('coffee');
+    for (const [, clauses] of ObjectEntries(query)) {
+      builder.whereClauses(clauses);
+    }
+
+    const payload = pagination.decode();
+    const direction = payload?.direction ?? 'next';
+
+    applyCursor(builder, {
+      primaryKeyName: 'id',
+      cursorPage: pagination,
+      orderBy: orderBy as Record<string, 'asc' | 'desc'>,
+    });
 
     const { sql, params: sqlParams } = builder.build();
-    const { sql: countSql, params: countParams } = countBuilder.build();
+    const dataResult = await pool.query(sql, sqlParams);
 
-    const [dataResult, countResult] = await Promise.all([
-      pool.query(sql, sqlParams),
-      pool.query(countSql, countParams)
-    ]);
-
-    const total = Number(countResult.rows[0]?.count || 0);
+    const result = CursorPage.processResult(
+      dataResult.rows as Coffee[],
+      pagination.limit,
+      direction,
+      orderBy as Record<string, 'asc' | 'desc'>,
+      !!pagination.cursor
+    );
 
     return {
-      data: dataResult.rows as Coffee[],
-      limit,
-      offset,
-      total,
+      data: result.data,
+      pagination: new CursorPage(pagination.limit, pagination.cursor, result.prevCursor, result.nextCursor),
     };
   }
 

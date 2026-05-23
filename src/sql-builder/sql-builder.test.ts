@@ -657,7 +657,10 @@ describe('SqlBuilder', () => {
     });
 
     it('should perform deep-like cloning allowing independent mutations', () => {
-      const original = new SqlBuilder<TestTable>('SELECT * FROM users').whereEquals('status', 'active');
+      const original = new SqlBuilder<TestTable>('SELECT * FROM users').whereEquals(
+        'status',
+        'active'
+      );
       const cloned = original.clone();
 
       cloned.whereEquals('age', 18);
@@ -684,10 +687,9 @@ describe('SqlBuilder', () => {
       });
 
       it('should build cursor filter from a decoded object for a single column', () => {
-        const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereCursor(
-          { id: 42 },
-          [{ field: 'id', direction: 'asc' }]
-        );
+        const builder = new SqlBuilder<TestTable>('SELECT * FROM users').whereCursor({ id: 42 }, [
+          { field: 'id', direction: 'asc' },
+        ]);
 
         expect(builder.build()).toEqual({
           sql: 'SELECT * FROM users WHERE (id > $1)',
@@ -715,7 +717,7 @@ describe('SqlBuilder', () => {
         const cursorData = {
           values: { created_at: '2026-05-22', id: 100 },
           direction: 'next',
-          orderBy: { created_at: 'desc', id: 'asc' }
+          orderBy: { created_at: 'desc', id: 'asc' },
         };
         const cursorBase64 = Buffer.from(JSON.stringify(cursorData)).toString('base64');
 
@@ -771,4 +773,3 @@ describe('SqlBuilder', () => {
     });
   });
 });
-

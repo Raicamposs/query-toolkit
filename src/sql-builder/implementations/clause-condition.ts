@@ -46,7 +46,10 @@ export class ClauseCondition extends Clause {
 
     // Date is an object, so we must check it before the general object check
     if (this.condition instanceof Date || typeof this.condition !== 'object') {
-      const value = new PrimitiveValue(this.condition as unknown as PrimitiveValueTypes, this.transformFunction).toValue();
+      const value = new PrimitiveValue(
+        this.condition as unknown as PrimitiveValueTypes,
+        this.transformFunction
+      ).toValue();
       return this.transformParameterized('equals', value, paramIndex);
     }
 

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CoffeeRepositoryPg } from './coffee-pg.repository';
 import { pool } from '../../database';
-import { EqualsOperator } from '@raicamposs/query-toolkit';
+import { EqualsOperator, CursorPage } from '@raicamposs/query-toolkit';
+import { ListCoffeesParams } from './coffee.repository';
 
 // Mock do pool de conexão com o PostgreSQL
 vi.mock('../../database', () => {
@@ -27,43 +28,30 @@ describe('CoffeeRepositoryPg (PostgreSQL Native Repository Tests)', () => {
         { id: 1, name: 'Espresso', price: 3.5 },
         { id: 2, name: 'Cappuccino', price: 5.0 },
       ];
-      const mockCount = [{ count: '2' }];
 
       // O list realiza duas queries paralelamente com Promise.all
       vi.mocked(pool.query)
-        .mockResolvedValueOnce({ rows: mockRows } as any)
-        .mockResolvedValueOnce({ rows: mockCount } as any);
+        .mockResolvedValueOnce({ rows: mockRows } as any);
 
-      const params = {
-        limit: 10,
-        offset: 0,
-        name: [new EqualsOperator('==Espresso')],
+      const params: ListCoffeesParams = {
+        params: {
+          name: [new EqualsOperator('Espresso')],
+        },
+        pagination: new CursorPage(10),
       };
 
       const result = await repository.list(params);
 
       // Asserções no resultado formatado
       expect(result.data).toEqual(mockRows);
-      expect(result.limit).toBe(10);
-      expect(result.offset).toBe(0);
-      expect(result.total).toBe(2);
+      expect(result.pagination.limit).toBe(10);
 
       // Verifica se a primeira query utilizou o SqlBuilder parametrizado corretamente
       const [firstSqlCall, firstParams] = vi.mocked(pool.query).mock.calls[0];
       expect(firstSqlCall).toContain('SELECT * FROM coffee');
       expect(firstSqlCall).toContain('name = $1');
-      expect(firstSqlCall).toContain('LIMIT 10');
+      expect(firstSqlCall).toContain('LIMIT 11');
       expect(firstParams).toEqual(['Espresso']);
-
-      // Verifica se a segunda query foi a de contagem
-      const [secondSqlCall, secondParams] = vi.mocked(pool.query).mock.calls[1];
-      expect(secondSqlCall).toContain('SELECT COUNT(*) as count FROM coffee');
-      expect(secondSqlCall).toContain('name = $1');
-      expect(secondParams).toEqual(['Espresso']);
-      
-      // Query de total não deve conter LIMIT ou OFFSET
-      expect(secondSqlCall).not.toContain('LIMIT');
-      expect(secondSqlCall).not.toContain('OFFSET');
     });
   });
 

@@ -1,20 +1,10 @@
-import { QueryParamsParse } from '@raicamposs/query-toolkit';
+import { CursorPage, QueryParamsParse, RsqlQueryParams } from '@raicamposs/query-toolkit';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { CoffeeContainer } from './coffee.container';
 import { createCoffeeSchema } from './dto/create-coffee-data';
+import type { Coffee } from './entities/coffee';
 import { NotFoundError } from './repositories/coffee.repository';
-
-
-/**
- * Schema de validação para os query params da listagem.
- */
-const systemQuerySchema = z.object({
-  sort: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
-  offset: z.coerce.number().int().min(0).optional().default(0),
-}).passthrough();
-
 
 /**
  * Controller Layer: CoffeeController
@@ -27,7 +17,6 @@ export class CoffeeController {
   constructor(private container: CoffeeContainer) {
   }
 
-
   /**
    * GET /coffees
    * Listagem de cafés com SQL Builder e RSQL lidos diretamente dos parâmetros de query
@@ -35,23 +24,18 @@ export class CoffeeController {
   async list(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
     try {
       const query = request.query as Record<string, string>;
-      const clauses = new QueryParamsParse(query).build();
-      const systemQuery = systemQuerySchema.parse(request.query);
+      const clauses = new QueryParamsParse<Coffee>(query as RsqlQueryParams<Coffee>).build();
+      const pagination = (clauses.pagination as CursorPage | undefined) ?? new CursorPage(20);
 
       const result = await this.container.listCoffeesUseCase.execute({
-        ...clauses,
-        sort: systemQuery.sort,
-        limit: systemQuery.limit,
-        offset: systemQuery.offset,
+        params: clauses.params,
+        sort: clauses.sort,
+        pagination: pagination,
       });
 
       return reply.status(200).send({
         data: result.data,
-        meta: {
-          total: result.total,
-          limit: result.limit,
-          offset: result.offset,
-        },
+        meta: result.pagination,
       });
     } catch (error) {
       return this.handleError(error, reply);

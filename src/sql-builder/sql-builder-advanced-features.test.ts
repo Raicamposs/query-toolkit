@@ -83,7 +83,9 @@ describe('SqlBuilder — Observabilidade e Telemetria (onBuild)', () => {
 
 describe('SqlBuilder — Opção de Configuração prettyPrint', () => {
   it('should keep multi-space characters when prettyPrint is false', () => {
-    const { sql } = new SqlBuilder<User>('SELECT   *   FROM   users', undefined, { prettyPrint: false })
+    const { sql } = new SqlBuilder<User>('SELECT   *   FROM   users', undefined, {
+      prettyPrint: false,
+    })
       .whereEquals('name', 'John')
       .build();
 
@@ -91,7 +93,9 @@ describe('SqlBuilder — Opção de Configuração prettyPrint', () => {
   });
 
   it('should compact multi-spaces when prettyPrint is true (default)', () => {
-    const { sql } = new SqlBuilder<User>('SELECT   *   FROM   users', undefined, { prettyPrint: true })
+    const { sql } = new SqlBuilder<User>('SELECT   *   FROM   users', undefined, {
+      prettyPrint: true,
+    })
       .whereEquals('name', 'John')
       .build();
 
@@ -102,10 +106,10 @@ describe('SqlBuilder — Opção de Configuração prettyPrint', () => {
 describe('SqlBuilder — Segurança Preventiva contra SQL Injection', () => {
   it('should emit a console.warn in development mode when suspicious raw string concat is detected', () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     // Config explicitly enabling security warnings
     const builder = SqlBuilder.from<User>('users', undefined, { enableSecurityWarnings: true });
-    
+
     // Suspicious: uses inline single quotes, no parameters
     builder.whereRaw("name = 'John'");
 
@@ -119,7 +123,7 @@ describe('SqlBuilder — Segurança Preventiva contra SQL Injection', () => {
 
   it('should not emit a warning if parameters are used', () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     const builder = SqlBuilder.from<User>('users', undefined, { enableSecurityWarnings: true });
     builder.whereRaw('name = $1', ['John']);
 
@@ -129,7 +133,7 @@ describe('SqlBuilder — Segurança Preventiva contra SQL Injection', () => {
 
   it('should not emit a warning if enableSecurityWarnings is explicitly disabled', () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     const builder = SqlBuilder.from<User>('users', undefined, { enableSecurityWarnings: false });
     builder.whereRaw("name = 'John'");
 
@@ -141,7 +145,7 @@ describe('SqlBuilder — Segurança Preventiva contra SQL Injection', () => {
 describe('SqlBuilder — Otimização Regex Cache', () => {
   it('should successfully compile buildRaw multiple times using static regex cache', () => {
     const builder = SqlBuilder.from<User>('users').whereEquals('name', 'John');
-    
+
     const raw1 = builder.buildRaw();
     const raw2 = builder.buildRaw();
 

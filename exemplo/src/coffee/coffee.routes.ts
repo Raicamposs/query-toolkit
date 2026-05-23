@@ -16,7 +16,7 @@ interface CoffeeRoutesOptions {
 }
 
 export async function coffeeRoutes(app: FastifyInstance, opts: CoffeeRoutesOptions = {}): Promise<void> {
-  const container = opts.container || CoffeeContainer.prismaInstance;
+  const container = opts.container || CoffeeContainer.postgresInstance;
   const coffeeController = new CoffeeController(container);
 
   /**

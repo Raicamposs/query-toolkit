@@ -1,10 +1,16 @@
+import { SortDirection } from '../../../common';
 import { QueryParamsOperator } from '../../../query-operator';
 import { QueryableFields } from '../../../types';
-import { PrismaVisitor, PrismaWhereClause } from '../visitors/prisma-visitor';
 import { QueryParamsConverter } from '../../core/query-params-converter';
 import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
+import { ISortConverter } from '../../core/sort-converter-interface';
+import { PrismaVisitor, PrismaWhereClause } from '../visitors/prisma-visitor';
 
-export class QueryParamsPrismaConverter<T = unknown> implements IQueryParamsConverter<unknown> {
+export type PrismaOrderByClause = Record<string, SortDirection>;
+
+export class QueryParamsPrismaConverter<T = unknown>
+  implements IQueryParamsConverter<unknown>, ISortConverter<PrismaOrderByClause>
+{
   private converter: QueryParamsConverter<T>;
   private visitor: PrismaVisitor;
   constructor(
@@ -14,6 +20,10 @@ export class QueryParamsPrismaConverter<T = unknown> implements IQueryParamsConv
   ) {
     this.converter = new QueryParamsConverter<T>(this.operators);
     this.visitor = new PrismaVisitor();
+  }
+
+  sort(sort?: Record<string, SortDirection>): PrismaOrderByClause | undefined {
+    return sort;
   }
 
   build(): Record<string, unknown> {

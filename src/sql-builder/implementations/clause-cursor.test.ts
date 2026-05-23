@@ -3,9 +3,7 @@ import { ClauseCursor } from './clause-cursor';
 
 describe('ClauseCursor', () => {
   it('should build a single-column cursor clause with asc direction', () => {
-    const clause = new ClauseCursor([
-      { column: 'id', value: 42, direction: 'asc' },
-    ]);
+    const clause = new ClauseCursor([{ column: 'id', value: 42, direction: 'asc' }]);
 
     const result = clause.build({ startParamIndex: 1 });
 
@@ -36,9 +34,7 @@ describe('ClauseCursor', () => {
 
     const result = clause.build({ startParamIndex: 1 });
 
-    expect(result?.sql).toBe(
-      '(created_at < $1) OR (created_at = $3 AND id > $2)'
-    );
+    expect(result?.sql).toBe('(created_at < $1) OR (created_at = $3 AND id > $2)');
     expect(result?.params).toEqual(['2026-05-22', 100, '2026-05-22']);
   });
 

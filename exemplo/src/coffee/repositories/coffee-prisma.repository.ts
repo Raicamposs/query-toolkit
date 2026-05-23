@@ -1,4 +1,4 @@
-import { QueryParamsPrismaConverter } from '@raicamposs/query-toolkit';
+import { CursorPage, QueryParamsPrismaConverter } from '@raicamposs/query-toolkit';
 import { prisma } from '../../database';
 import { CreateCoffeeData } from '../dto/create-coffee-data';
 import { Coffee } from '../entities/coffee';
@@ -11,27 +11,36 @@ import { ICoffeeRepository, ListCoffeesParams, ListCoffeesResult } from './coffe
  */
 export class CoffeeRepositoryPrisma implements ICoffeeRepository {
 
-  async list(params: ListCoffeesParams): Promise<ListCoffeesResult> {
-    const { limit, offset, sort: _sort, ...filters } = params;
-    const converter = new QueryParamsPrismaConverter(filters);
-    const query = converter.build();
+  async list(queryParams: ListCoffeesParams): Promise<ListCoffeesResult> {
+    const filterParams = (queryParams.params || {}) as Record<string, unknown>;
 
-    const [data, total] = await Promise.all([
-      prisma.coffee.findMany({
-        where: query,
-        take: limit,
-        skip: offset,
-      }),
-      prisma.coffee.count({
-        where: query,
-      })
-    ]);
+    const sort = queryParams.sort;
+    const pagination = queryParams.pagination || new CursorPage(20);
+
+    const converter = new QueryParamsPrismaConverter(filterParams);
+    const query = converter.build();
+    const orderBy = converter.sort(sort);
+
+    const cursor = pagination.decode();
+    const rawData = await prisma.coffee.findMany({
+      where: query,
+      orderBy,
+      take: pagination.limit + 1,
+      cursor: cursor?.values?.id ? { id: Number(cursor.values.id) } : undefined,
+      skip: cursor?.values ? 1 : 0,
+    });
+
+    const result = CursorPage.processResult(
+      rawData,
+      pagination.limit,
+      'next',
+      orderBy as Record<string, 'asc' | 'desc'>,
+      !!pagination.cursor
+    );
 
     return {
-      data: CoffeeMapper.create().toDomainList(data),
-      limit,
-      offset,
-      total,
+      data: CoffeeMapper.create().toDomainList(result.data),
+      pagination: new CursorPage(pagination.limit, pagination.cursor, result.prevCursor, result.nextCursor)
     };
   }
 
@@ -46,4 +55,3 @@ export class CoffeeRepositoryPrisma implements ICoffeeRepository {
     return new CoffeeMapper().toDomain(prismaCoffee);
   }
 }
-

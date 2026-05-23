@@ -1,6 +1,6 @@
-import { CursorPage } from "../query-operator/pagination/cursor-page";
-import { QueryableFields } from "../types";
-import { SqlBuilder } from "./sql-builder";
+import { CursorPage } from '../common';
+import { QueryableFields } from '../types';
+import { SqlBuilder } from './sql-builder';
 
 export interface CursorParams {
   primaryKeyName: string;
@@ -15,10 +15,7 @@ export interface CursorBuilderResult {
 
 // Mixin method para adicionar no SqlBuilder
 // Preferível a herança — chame no final do construtor ou adicione ao prototype
-export function applyCursor<T>(
-  builder: SqlBuilder<T>,
-  params: CursorParams
-): CursorBuilderResult {
+export function applyCursor<T>(builder: SqlBuilder<T>, params: CursorParams): CursorBuilderResult {
   const { cursorPage, primaryKeyName } = params;
   const payload = cursorPage?.decode();
 
@@ -45,15 +42,19 @@ export function applyCursor<T>(
   // inverte para paginar para trás
   const effectiveOrderBy: Record<string, 'asc' | 'desc'> = isBackward
     ? Object.fromEntries(
-      Object.entries(baseOrderBy).map(([k, v]) => [k, v === 'asc' ? 'desc' : 'asc'])
-    )
+        Object.entries(baseOrderBy).map(([k, v]) => [k, v === 'asc' ? 'desc' : 'asc'])
+      )
     : baseOrderBy;
 
   // aplica WHERE no builder
   if (anchorId !== undefined) {
     const op = isBackward
-      ? baseOrderBy[primaryKeyName] === 'asc' ? 'lt' : 'gt'
-      : baseOrderBy[primaryKeyName] === 'asc' ? 'gt' : 'lt';
+      ? baseOrderBy[primaryKeyName] === 'asc'
+        ? 'lt'
+        : 'gt'
+      : baseOrderBy[primaryKeyName] === 'asc'
+        ? 'gt'
+        : 'lt';
 
     if (op === 'gt') {
       builder.whereGreaterThan(primaryKeyName as unknown as QueryableFields<T>, anchorId as number);

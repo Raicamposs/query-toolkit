@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CursorCodec } from '../query-operator/pagination/cursor-codec';
-import { CursorPage } from '../query-operator/pagination/cursor-page';
+import { CursorCodec } from '../common/pagination/cursor-codec';
+import { CursorPage } from '../common/pagination/cursor-page';
 import { SqlBuilder } from './sql-builder';
 import { applyCursor } from './sql-builder-cursor';
 

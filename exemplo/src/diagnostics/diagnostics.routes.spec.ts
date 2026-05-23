@@ -23,14 +23,15 @@ describe('Diagnostics Routes Integration Tests (GET /decode)', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body).toBeDefined();
-    
-    expect(body.origin).toBeDefined();
-    expect(body.origin[0]).toHaveProperty('symbol', '==');
-    expect(body.origin[0]).toHaveProperty('params', '==Brazil');
 
-    expect(body.price).toBeDefined();
-    expect(body.price[0]).toHaveProperty('symbol', 'btw=');
-    expect(body.price[0]).toHaveProperty('params', 'btw=20,60');
+    expect(body.params).toBeDefined();
+    expect(body.params.origin).toBeDefined();
+    expect(body.params.origin[0]).toHaveProperty('symbol', '==');
+    expect(body.params.origin[0]).toHaveProperty('params', '==Brazil');
+
+    expect(body.params.price).toBeDefined();
+    expect(body.params.price[0]).toHaveProperty('symbol', 'btw=');
+    expect(body.params.price[0]).toHaveProperty('params', 'btw=20,60');
   });
 
   it('should successfully decode flat parameters without explicit RSQL operators using equals', async () => {
@@ -44,9 +45,11 @@ describe('Diagnostics Routes Integration Tests (GET /decode)', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body).toBeDefined();
-    expect(body.origin).toBeDefined();
-    expect(body.origin[0]).toHaveProperty('symbol', '');
-    expect(body.origin[0]).toHaveProperty('params', 'Brazil');
+
+    expect(body.params).toBeDefined();
+    expect(body.params.origin).toBeDefined();
+    expect(body.params.origin[0]).toHaveProperty('symbol', '');
+    expect(body.params.origin[0]).toHaveProperty('params', 'Brazil');
   });
 
   it('should successfully decode parameters using asRsqlOperatorsObject under /rsql endpoint', async () => {
@@ -60,6 +63,7 @@ describe('Diagnostics Routes Integration Tests (GET /decode)', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body).toBeDefined();
+
     expect(body.origin).toEqual({ equals: 'Brazil' });
     expect(body.price).toEqual({ gte: 20, lte: 60 });
   });

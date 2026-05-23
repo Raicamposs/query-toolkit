@@ -18,7 +18,7 @@ function buildApp() {
 
 describe('Coffee Routes Integration Tests (Fastify + In-Memory Repository)', () => {
   describe('GET /coffees', () => {
-    it('should successfully list coffees and return default limit and offset metadata', async () => {
+    it('should successfully list coffees and return default limit and cursor metadata', async () => {
       const app = buildApp();
 
       const response = await app.inject({
@@ -31,29 +31,28 @@ describe('Coffee Routes Integration Tests (Fastify + In-Memory Repository)', () 
       expect(body.data).toBeDefined();
       expect(Array.isArray(body.data)).toBe(true);
       expect(body.data.length).toBeGreaterThan(0);
-      expect(body.meta).toEqual({
-        total: 6, // 6 seeded items
-        limit: 20,
-        offset: 0,
-      });
+
+      expect(body.meta.limit).toBe(20);
+      // Since it uses Cursor pagination by default now:
+      expect(body.meta.cursor).toBeUndefined(); // Assuming items fit in the first page so no next cursor is strictly needed for the same query. Or it could be defined if there are more. Since limit is 20 and total is 6, there's no next page, cursor can be undefined.
+      expect(body.meta.offset).toBeUndefined();
     });
 
-    it('should respect custom pagination limits and offsets', async () => {
+    it('should respect custom pagination limits and return valid cursor when more items exist', async () => {
       const app = buildApp();
 
       const response = await app.inject({
         method: 'GET',
-        url: '/coffees?limit=2&offset=1',
+        url: '/coffees?limit=2',
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.data).toHaveLength(2);
-      expect(body.meta).toEqual({
-        total: 6,
-        limit: 2,
-        offset: 1,
-      });
+
+      expect(body.meta.limit).toBe(2);
+      expect(typeof body.meta.nextCursor).toBe('string'); // Next cursor should be generated
+      expect(body.meta.offset).toBeUndefined();
     });
   });
 

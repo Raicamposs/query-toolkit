@@ -8,6 +8,7 @@
  */
 
 import { Coffee } from "@prisma/client";
+import { CursorPage } from "@raicamposs/query-toolkit";
 import { Nullable } from "@raicamposs/toolkit";
 import { CreateCoffeeData } from "../dto/create-coffee-data";
 import { ICoffeeRepository, ListCoffeesParams, ListCoffeesResult } from "./coffee.repository";
@@ -24,15 +25,36 @@ export class CoffeeRepositoryMemory implements ICoffeeRepository {
   }
 
   list(params: ListCoffeesParams): Promise<ListCoffeesResult> {
-    const { limit, offset } = params;
+    const { pagination } = params;
+    const limit = pagination?.limit ?? 20;
+
+    let offset = 0;
     const all = Array.from(this.coffees.values());
-    const data = all.slice(offset, offset + limit);
+
+    if (pagination && 'decode' in pagination && typeof pagination.decode === 'function') {
+      const cursorObj = pagination.decode();
+      if (cursorObj?.values?.id) {
+        const decodedId = Number(cursorObj.values.id);
+        const index = all.findIndex(c => c.id === decodedId);
+        if (index !== -1) {
+          offset = index + 1; // start after the cursor
+        }
+      }
+    }
+
+    const rawData = all.slice(offset, offset + limit + 1);
+
+    const result = CursorPage.processResult(
+      rawData,
+      limit,
+      'next',
+      { id: 'asc' },
+      !!pagination?.cursor
+    );
 
     return Promise.resolve({
-      data,
-      limit,
-      offset,
-      total: all.length,
+      data: result.data,
+      pagination: new CursorPage(limit, pagination?.cursor, result.prevCursor, result.nextCursor)
     });
   }
 

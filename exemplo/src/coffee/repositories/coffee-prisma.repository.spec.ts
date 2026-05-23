@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CoffeeRepositoryPrisma } from './coffee-prisma.repository';
 import { prisma } from '../../database';
-import { EqualsOperator } from '@raicamposs/query-toolkit';
+import { EqualsOperator, CursorPage } from '@raicamposs/query-toolkit';
+import { ListCoffeesParams } from './coffee.repository';
 
 // Mock do prisma client
 vi.mock('../../database', () => {
@@ -35,28 +36,27 @@ describe('CoffeeRepositoryPrisma (Prisma Repository Tests)', () => {
       vi.mocked(prisma.coffee.findMany).mockResolvedValueOnce(mockData as any);
       vi.mocked(prisma.coffee.count).mockResolvedValueOnce(mockCount);
 
-      const params = {
-        limit: 5,
-        offset: 0,
-        name: [new EqualsOperator('==Espresso')],
+      const params: ListCoffeesParams = {
+        params: {
+          name: [new EqualsOperator('Espresso')]
+        },
+        pagination: new CursorPage(5)
       };
 
       const result = await repository.list(params);
 
       expect(result.data).toEqual(mockData);
-      expect(result.limit).toBe(5);
-      expect(result.offset).toBe(0);
-      expect(result.total).toBe(1);
+      expect(result.pagination.limit).toBe(5);
 
       expect(prisma.coffee.findMany).toHaveBeenCalledWith({
         where: { name: 'Espresso' },
-        take: 5,
-        skip: 0,
+        orderBy: undefined,
+        take: 6,
+        cursor: undefined,
+        skip: 0
       });
 
-      expect(prisma.coffee.count).toHaveBeenCalledWith({
-        where: { name: 'Espresso' },
-      });
+
     });
   });
 

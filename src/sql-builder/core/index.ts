@@ -1,5 +1,3 @@
-export * from '../../query-operator/pagination/cursor-codec';
-export * from '../../query-operator/pagination/cursor-page';
 export * from './clause';
 export * from './clause-base';
 export * from './config';
@@ -10,5 +8,3 @@ export * from './primitive-value';
 export * from './sql-builder-errors';
 export * from './sql-keywords';
 export * from './transform-function';
-
-

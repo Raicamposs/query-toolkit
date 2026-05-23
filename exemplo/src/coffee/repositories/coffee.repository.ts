@@ -1,28 +1,27 @@
-import { QueryParamsOperator } from "@raicamposs/query-toolkit";
+import { CursorPage, QueryParamsOperator, SortDirection } from "@raicamposs/query-toolkit";
 import { Nullable } from "@raicamposs/toolkit";
 import { CreateCoffeeData } from "../dto/create-coffee-data";
 import { Coffee } from "../entities/coffee";
 
 
 export interface ListCoffeesParams {
-  id?: Array<QueryParamsOperator>;
-  name?: Array<QueryParamsOperator>;
-  origin?: Array<QueryParamsOperator>;
-  roast?: Array<QueryParamsOperator>;
-  flavor?: Array<QueryParamsOperator>;
-  price?: Array<QueryParamsOperator>;
-  available?: Array<QueryParamsOperator>;
-  tags?: Array<QueryParamsOperator>;
-  sort?: string;
-  limit: number;
-  offset: number;
+  params: {
+    id?: Array<QueryParamsOperator>;
+    name?: Array<QueryParamsOperator>;
+    origin?: Array<QueryParamsOperator>;
+    roast?: Array<QueryParamsOperator>;
+    flavor?: Array<QueryParamsOperator>;
+    price?: Array<QueryParamsOperator>;
+    available?: Array<QueryParamsOperator>;
+    tags?: Array<QueryParamsOperator>;
+  }
+  sort?: Record<string, SortDirection>;
+  pagination?: CursorPage;
 }
 
 export interface ListCoffeesResult {
   data: Coffee[];
-  total: number;
-  limit: number;
-  offset: number;
+  pagination: CursorPage;
 }
 
 export class NotFoundError extends Error {

@@ -75,13 +75,13 @@ async function setupTestDatabase(): Promise<void> {
 describe('Coffee E2E Tests (Integration with Real PostgreSQL)', () => {
   beforeAll(async () => {
     // Importações dinâmicas tardias para garantir que as variáveis de ambiente do dotenv já estejam no process.env
-    const routesMod = await import('../../src/coffee/coffee.routes');
+    const routesMod = await import('../../src/coffee/coffee.routes.js');
     coffeeRoutes = routesMod.coffeeRoutes;
 
-    const containerMod = await import('../../src/coffee/coffee.container');
+    const containerMod = await import('../../src/coffee/coffee.container.js');
     CoffeeContainer = containerMod.CoffeeContainer;
 
-    const dbMod = await import('../../src/database');
+    const dbMod = await import('../../src/database.js');
     prisma = dbMod.prisma;
     pool = dbMod.pool;
   });
