@@ -38,7 +38,7 @@ export class QueryParamsParse<T> {
 
       return ObjectEntries(sort).reduce(
         (acc, [key, value]) => {
-          if (this.validKeys.has(key as QueryableFields<T>)) {
+          if (this.validKeys.size === 0 || this.validKeys.has(key as QueryableFields<T>)) {
             acc[key as QueryableFields<T>] = value;
           }
           return acc;
