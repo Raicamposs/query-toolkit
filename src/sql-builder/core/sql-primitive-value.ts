@@ -1,8 +1,7 @@
 import { isAssigned, isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
 import { SqlInjectionDetector } from '../../common/sql-injection-detector';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 import { TransformFunction } from './transform-function';
-
-export type PrimitiveValueTypes = string | boolean | number | Date;
 
 /**
  * Converts primitive values to SQL-safe strings with SQL injection protection
@@ -18,14 +17,14 @@ export type PrimitiveValueTypes = string | boolean | number | Date;
  * new PrimitiveValue("O'Brien").toSql() // Returns: 'O''Brien'
  * new PrimitiveValue(123).toSql()       // Returns: 123
  */
-export class PrimitiveValue {
+export class SqlPrimitiveValue {
   // SQL Injection Protection Patterns
   private static readonly QUOTE_REGEX = /'/g;
   private static readonly BACKSLASH_REGEX = /\\/g;
   private static readonly NULL_BYTE_REGEX = /\0/g;
 
   constructor(
-    private readonly value: Nullable<PrimitiveValueTypes>,
+    private readonly value: Nullable<PrimitiveValueType>,
     private readonly valueTransform?: TransformFunction
   ) {}
 
@@ -68,7 +67,7 @@ export class PrimitiveValue {
    * Returns the raw value
    * @returns The raw value
    */
-  getValue(): Nullable<PrimitiveValueTypes> {
+  getValue(): Nullable<PrimitiveValueType> {
     return this.value;
   }
 
@@ -76,7 +75,7 @@ export class PrimitiveValue {
    * Returns the value for parameterized query binding.
    * Dates are returned as Date objects, other primitives are returned as is.
    */
-  toValue(): Nullable<PrimitiveValueTypes> {
+  toValue(): Nullable<PrimitiveValueType> {
     if (isNullOrUndefined(this.value)) {
       return null;
     }
@@ -137,9 +136,9 @@ export class PrimitiveValue {
     }
 
     const sanitized = str
-      .replace(PrimitiveValue.NULL_BYTE_REGEX, '')
-      .replace(PrimitiveValue.BACKSLASH_REGEX, '\\\\')
-      .replace(PrimitiveValue.QUOTE_REGEX, "''");
+      .replace(SqlPrimitiveValue.NULL_BYTE_REGEX, '')
+      .replace(SqlPrimitiveValue.BACKSLASH_REGEX, '\\\\')
+      .replace(SqlPrimitiveValue.QUOTE_REGEX, "''");
 
     if (SqlInjectionDetector.detect(sanitized)) {
       throw new Error(`Invalid string value: ${sanitized}. SQL injection detected.`);

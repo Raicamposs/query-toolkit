@@ -37,6 +37,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', 'coverage/**', '*.config.js', '*.config.mjs', '.agent/**'],
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**', '*.config.js', '*.config.mjs', '.agent/**', 'exemplo/dist/**', 'exemplo/prisma/generated/**'],
   }
 );

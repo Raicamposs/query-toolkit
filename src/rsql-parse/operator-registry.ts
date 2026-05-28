@@ -1,4 +1,6 @@
-import { parseRsqlValue } from '../common/date-parser';
+import { PrimitiveValue, PrimitiveValueType } from '../common/types/primitive-value';
+import { Nullable } from '@raicamposs/toolkit';
+import { OperatorSymbol, OperatorSymbolType } from '../common/types/operator-symbol';
 import {
   ArrayContainsOperator,
   ArrayIsContainedByOperator,
@@ -17,9 +19,8 @@ import {
   QueryParamsOperator,
 } from '../query-operator';
 import { UnknownOperator } from '../query-operator/operators/unknown-operator';
-import { OperatorSymbol, OperatorSymbolType } from '../types/operator-symbol';
 
-export type OperatorResolver = (params: string) => QueryParamsOperator;
+export type OperatorResolver = (params: string) => QueryParamsOperator<unknown, unknown>;
 
 /**
  * Função utilitária para fazer o parse de valores no formato de lista (separados por vírgula) do RSQL.
@@ -28,7 +29,7 @@ export type OperatorResolver = (params: string) => QueryParamsOperator;
 export function parseRsqlListValue(
   params: string,
   symbol: string
-): Array<string | boolean | number | Date> {
+): Array<Nullable<PrimitiveValueType>> {
   if (!params.includes(symbol)) {
     return [];
   }
@@ -40,7 +41,7 @@ export function parseRsqlListValue(
     .split(',')
     .map((v) => v.trim())
     .filter((v) => v !== '')
-    .map((v) => parseRsqlValue(v));
+    .map((v) => PrimitiveValue.converter(v).getValue());
 }
 
 /**
@@ -59,8 +60,8 @@ export class OperatorRegistry {
 
     this.resolvers.set(OperatorSymbol.equals, (params) => new EqualsOperator(params));
     this.resolvers.set(OperatorSymbol.notEquals, (params) => new NotEqualsOperator(params));
-    this.resolvers.set(OperatorSymbol.ilike, (params) => new ContainsOperator(params));
-    this.resolvers.set(OperatorSymbol.notLike, (params) => new NotContainsOperator(params));
+    this.resolvers.set(OperatorSymbol.contains, (params) => new ContainsOperator(params));
+    this.resolvers.set(OperatorSymbol.notContains, (params) => new NotContainsOperator(params));
     this.resolvers.set(OperatorSymbol.between, (params) => new BetweenOperator(params));
     this.resolvers.set(OperatorSymbol.greaterThan, (params) => new GreaterThanOperator(params));
     this.resolvers.set(
@@ -78,14 +79,8 @@ export class OperatorRegistry {
     );
     this.resolvers.set(OperatorSymbol.arrayContains, (params) => new ArrayContainsOperator(params));
     this.resolvers.set(OperatorSymbol.arrayOverlap, (params) => new ArrayOverlapOperator(params));
-    this.resolvers.set(
-      OperatorSymbol.in,
-      (params) => new InOperator(parseRsqlListValue(params, OperatorSymbol.in))
-    );
-    this.resolvers.set(
-      OperatorSymbol.notIn,
-      (params) => new NotInOperator(parseRsqlListValue(params, OperatorSymbol.notIn))
-    );
+    this.resolvers.set(OperatorSymbol.in, (params) => new InOperator(params));
+    this.resolvers.set(OperatorSymbol.notIn, (params) => new NotInOperator(params));
   }
 
   /**
@@ -102,7 +97,7 @@ export class OperatorRegistry {
    * Resolve e instancia um operador correspondente a partir dos parâmetros de string.
    * @param params String RSQL completa (ex: "==Brazil", "gt=50").
    */
-  static resolve(params: string): QueryParamsOperator {
+  static resolve(params: string): QueryParamsOperator<unknown, unknown> {
     this.ensureInitialized();
     let bestSymbol = '';
     let bestResolver: OperatorResolver | null = null;

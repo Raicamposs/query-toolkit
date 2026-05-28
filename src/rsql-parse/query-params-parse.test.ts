@@ -15,7 +15,7 @@ describe('QueryParamsParse', () => {
   it('should parse simple query parameters', () => {
     const params = { name: '==John', age: 'gt=18' };
     const parser = new QueryParamsParse<UserTest>(params);
-    const { params: result } = parser.build();
+    const { operators: result } = parser;
 
     expect(result.name).toHaveLength(1);
     expect(result.name[0]).toBeInstanceOf(EqualsOperator);
@@ -26,7 +26,7 @@ describe('QueryParamsParse', () => {
   it('should handle array parameters', () => {
     const params = { status: ['==active', '==pending'] };
     const parser = new QueryParamsParse<UserTest>(params as any);
-    const { params: result } = parser.build();
+    const { operators: result } = parser;
 
     expect(result.status).toHaveLength(2);
     expect(result.status[0]).toBeInstanceOf(EqualsOperator);
@@ -36,7 +36,7 @@ describe('QueryParamsParse', () => {
   it('should ignore empty values or keys', () => {
     const params = { name: '', '': '==value' };
     const parser = new QueryParamsParse<UserTest>(params);
-    const { params: result } = parser.build();
+    const { operators: result } = parser;
 
     expect(Object.keys(result)).toHaveLength(0);
   });
@@ -56,7 +56,7 @@ describe('QueryParamsParse', () => {
 
     const params = { field: 'fake=value' };
     const parser = new QueryParamsParse<any>(params);
-    const { params: result } = parser.build();
+    const { operators: result } = parser;
 
     expect(result.field).toHaveLength(1);
     expect(result.field[0]).toBeInstanceOf(CustomFakeOperator);
@@ -68,7 +68,7 @@ describe('QueryParamsParse', () => {
       const params = { name: '==John', age: 'gt=18', secret: '==forbidden' };
       const shape = { name: true, age: true } as any;
       const parser = new QueryParamsParse<UserTest>(params as any, shape);
-      const { params: result } = parser.build();
+      const { operators: result } = parser;
 
       expect(result.name).toBeDefined();
       expect(result.age).toBeDefined();
@@ -81,7 +81,7 @@ describe('QueryParamsParse', () => {
       const params = { sort: 'name:asc,-age,secret:desc' };
       const shape = { name: true, age: true } as any;
       const parser = new QueryParamsParse<UserTest>(params as any, shape);
-      const { sort } = parser.build();
+      const { sort } = parser;
 
       expect(sort).toBeDefined();
       expect(sort?.name).toBe('asc');
@@ -93,14 +93,14 @@ describe('QueryParamsParse', () => {
   describe('Pagination Strategies', () => {
     it('should return undefined if no pagination parameters are sent', () => {
       const parser = new QueryParamsParse<any>({});
-      const { pagination } = parser.build();
+      const { pagination } = parser;
       expect(pagination).toBeUndefined();
     });
 
     it('should parse CursorPage when limit and cursor are provided', () => {
       const params = { limit: '15', cursor: 'eyJ2Ijp7ImlkIjo0Mn19' };
       const parser = new QueryParamsParse<any>(params);
-      const { pagination } = parser.build();
+      const { pagination } = parser;
 
       expect(pagination).toBeInstanceOf(CursorPage);
       expect(pagination?.limit).toBe(15);
@@ -110,7 +110,7 @@ describe('QueryParamsParse', () => {
     it('should parse ClassicPage when limit and page are provided', () => {
       const params = { limit: '20', page: '3' };
       const parser = new QueryParamsParse<any>(params);
-      const { pagination } = parser.build();
+      const { pagination } = parser;
 
       expect(pagination).toBeInstanceOf(ClassicPage);
       expect(pagination?.limit).toBe(20);
@@ -120,7 +120,7 @@ describe('QueryParamsParse', () => {
     it('should parse ClassicPage from offset when limit and offset are provided', () => {
       const params = { limit: '50', offset: '100' };
       const parser = new QueryParamsParse<any>(params);
-      const { pagination } = parser.build();
+      const { pagination } = parser;
 
       expect(pagination).toBeInstanceOf(ClassicPage);
       expect(pagination?.limit).toBe(50);
@@ -130,13 +130,13 @@ describe('QueryParamsParse', () => {
     it('should enforce defensive MAX_PAGE_LIMIT in parsed paginations', () => {
       const paramsPage = { limit: '1000', page: '2' };
       const parserPage = new QueryParamsParse<any>(paramsPage);
-      const paginationPage = parserPage.build().pagination;
+      const paginationPage = parserPage.pagination;
 
       expect(paginationPage?.limit).toBe(MAX_PAGE_LIMIT); // Capped at MAX_PAGE_LIMIT (250)
 
       const paramsCursor = { limit: '9999', cursor: 'c_xyz' };
       const parserCursor = new QueryParamsParse<any>(paramsCursor);
-      const paginationCursor = parserCursor.build().pagination;
+      const paginationCursor = parserCursor.pagination;
 
       expect(paginationCursor?.limit).toBe(MAX_PAGE_LIMIT); // Capped at MAX_PAGE_LIMIT (250)
     });

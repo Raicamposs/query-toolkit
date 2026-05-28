@@ -1,20 +1,37 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { parseRsqlValue } from '../../common/date-parser';
+import { GreaterThanCondition } from '../../common/types';
+import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
-import { RsqlCondition } from '../../types';
-import { QueryParamsOperator } from '../query-params-operator';
+import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
 
-export class GreaterThanOperator extends QueryParamsOperator {
+export class GreaterThanOperator extends QueryParamsOperator<
+  GreaterThanCondition<number | Date>,
+  number | Date
+> {
+  private stateValue: PrimitiveValue;
+
   constructor(params: string) {
     super('gt=', params);
+    this.stateValue = PrimitiveValue.converter(this.getRawValue());
   }
 
-  value() {
-    return parseRsqlValue(this.getRawValue());
+  safeParse(): QueryParamsOperatorSafeParse<number | Date> {
+    const value = this.value();
+    if (value === null || value === undefined) {
+      return { success: false, error: `Invalid value for ${this.symbol} operator` };
+    }
+    if (this.isArray()) { return { success: false, error: 'Expected single value, got array' }; }
+    return { success: true, value };
   }
 
-  query(): Nullable<RsqlCondition> {
-    return { gt: this.value() } as RsqlCondition;
+  value(): Nullable<number | Date> {
+    return this.stateValue.asNumericOrDate();
+  }
+
+  query(): Nullable<GreaterThanCondition<number | Date>> {
+    const value = this.value();
+    if (value === null || value === undefined) return null;
+    return { gt: value };
   }
 
   accept<T>(visitor: OperatorVisitor<T>, field: string): T {

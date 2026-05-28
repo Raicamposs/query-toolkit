@@ -39,79 +39,74 @@ import type { OperatorVisitor } from '../../core/operator-visitor';
  */
 export class ClauseVisitor implements OperatorVisitor<Clause> {
   visitEquals(operator: EqualsOperator, field: string): Clause {
-    return new ClauseEquals(field, operator.value());
+    return new ClauseEquals(field, operator.value()!);
   }
 
   visitNotEquals(operator: NotEqualsOperator, field: string): Clause {
-    return new ClauseNotEquals(field, operator.value());
+    return new ClauseNotEquals(field, operator.value()!);
   }
 
   visitIn(operator: InOperator, field: string): Clause {
-    const value = operator.value();
+    const value = operator.value()!;
     return new ClauseIn(field, Array.isArray(value) ? value : [value]);
   }
 
   visitNotIn(operator: NotInOperator, field: string): Clause {
-    const value = operator.value();
+    const value = operator.value()!;
     const values = Array.isArray(value) ? value : [value];
     return new ClauseNotIn(field, values);
   }
 
   visitGreaterThan(operator: GreaterThanOperator, field: string): Clause {
-    return new ClauseGreaterThan(field, operator.value());
+    return new ClauseGreaterThan(field, operator.value()!);
   }
 
   visitGreaterThanOrEquals(operator: GreaterThanOrEqualsOperator, field: string): Clause {
-    return new ClauseGreaterThanOrEquals(field, operator.value());
+    return new ClauseGreaterThanOrEquals(field, operator.value()!);
   }
 
   visitLessThan(operator: LessThanOperator, field: string): Clause {
-    return new ClauseLessThan(field, operator.value());
+    return new ClauseLessThan(field, operator.value()!);
   }
 
   visitLessThanOrEquals(operator: LessThanOrEqualOperator, field: string): Clause {
-    return new ClauseLessThanOrEquals(field, operator.value());
+    return new ClauseLessThanOrEquals(field, operator.value()!);
   }
 
   visitContains(operator: ContainsOperator, field: string): Clause {
-    return new ClauseILike(field, `%${operator.value()}%`);
+    return new ClauseILike(field, `%${operator.value()!}%`);
   }
 
   visitNotContains(operator: NotContainsOperator, field: string): Clause {
-    return new ClauseNotILike(field, `%${operator.value()}%`);
+    return new ClauseNotILike(field, `%${operator.value()!}%`);
   }
 
   visitBetween(operator: BetweenOperator, field: string): Clause {
-    const value = operator.value();
+    const value = operator.value()!;
 
-    if (
-      !Array.isArray(value) ||
-      value.length !== 2 ||
-      isNullOrUndefined(value[0]) ||
-      isNullOrUndefined(value[1])
-    ) {
+    if (!value || typeof value !== 'object' || !('gte' in value) || !('lte' in value)) {
       throw new Error(
-        `Invalid value for Between operator on field "${field}". Expected an array with 2 elements.`
+        `Invalid value for Between operator on field "${field}". Expected an object with gte and lte.`
       );
     }
 
-    return new ClauseBetween(field, value[0], value[1]);
+    return new ClauseBetween(field, value.gte as number | Date, value.lte as number | Date);
   }
 
   visitArrayContains(operator: ArrayContainsOperator, field: string): Clause {
-    const value = operator.value();
+    const value = operator.value()!;
     const values = Array.isArray(value) ? value : [value];
     return new ClauseArrayContains(field, values);
   }
 
   visitArrayIsContainedBy(operator: ArrayIsContainedByOperator, field: string): Clause {
-    const value = operator.value();
+    const value = operator.value()!;
     const values = Array.isArray(value) ? value : [value];
     return new ClauseArrayIsContainedBy(field, values);
   }
 
   visitArrayOverlap(operator: ArrayOverlapOperator, field: string): Clause {
-    const value = operator.value();
+    const value = operator.value()!;
     const values = Array.isArray(value) ? value : [value];
     return new ClauseArrayOverlap(field, values);
   }
@@ -123,6 +118,6 @@ export class ClauseVisitor implements OperatorVisitor<Clause> {
       return new ClauseEmpty();
     }
 
-    return new ClauseEquals(field, value);
+    return new ClauseEquals(field, value!);
   }
 }

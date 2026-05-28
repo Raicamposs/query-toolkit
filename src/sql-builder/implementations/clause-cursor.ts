@@ -1,10 +1,10 @@
 import { Nullable } from '@raicamposs/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveValueTypes } from '../core/primitive-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export interface CursorItem {
   column: string;
-  value: PrimitiveValueTypes;
+  value: PrimitiveValueType;
   direction: 'asc' | 'desc';
 }
 
@@ -18,7 +18,7 @@ export class ClauseCursor extends Clause {
 
   build(option?: { startParamIndex?: number }) {
     let index = option?.startParamIndex ?? 1;
-    const params: Nullable<PrimitiveValueTypes>[] = [];
+    const params: Nullable<PrimitiveValueType>[] = [];
 
     // Algoritmo recursivo universal para Keyset Pagination de múltiplos campos
     // Ex: (col1 > val1) OR (col1 = val1 AND col2 > val2) ...

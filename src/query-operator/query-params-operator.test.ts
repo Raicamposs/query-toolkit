@@ -1,13 +1,16 @@
 import { Nullable } from '@raicamposs/toolkit';
 import { describe, expect, it } from 'vitest';
+import { RsqlCondition } from '../common/types';
 import { OperatorVisitor } from '../converters';
-import { PrimitiveValueTypes } from '../sql-builder/core';
-import { RsqlCondition } from '../types';
 import { QueryParamsOperator } from './query-params-operator';
 
 // Criamos uma classe de mock concreta que herda de QueryParamsOperator para testar a base abstrata
-class MockOperator extends QueryParamsOperator {
-  value(): PrimitiveValueTypes | PrimitiveValueTypes[] {
+class MockOperator extends QueryParamsOperator<RsqlCondition, string> {
+  safeParse(): { success: true; value: string } | { success: false; error: string } {
+    return { success: true, value: this.getRawValue() };
+  }
+
+  value(): string {
     return this.getRawValue();
   }
 

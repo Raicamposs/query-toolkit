@@ -32,12 +32,12 @@ describe('PrismaVisitor', () => {
   });
 
   it('should visit in', () => {
-    const op = new InOperator(['v1', 'v2']);
+    const op = new InOperator('in=v1,v2');
     expect(visitor.visitIn(op, 'field')).toEqual({ field: { in: ['v1', 'v2'] } });
   });
 
   it('should visit notIn', () => {
-    const op = new NotInOperator(['v1', 'v2']);
+    const op = new NotInOperator('out=v1,v2');
     expect(visitor.visitNotIn(op, 'field')).toEqual({ field: { notIn: ['v1', 'v2'] } });
   });
 
@@ -128,7 +128,7 @@ describe('PrismaVisitor', () => {
     const op = new BetweenOperator('btw=1,10');
     vi.spyOn(op, 'value').mockReturnValue(1 as any);
     expect(() => visitor.visitBetween(op, 'field')).toThrow(
-      'Invalid value for Between operator on field "field". Expected an array with 2 elements.'
+      'Invalid value for Between operator on field "field". Expected an object with gte and lte.'
     );
   });
 

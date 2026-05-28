@@ -1,23 +1,57 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { parseRsqlDate } from '../../common/date-parser';
+import { BetweenCondition } from '../../common/types';
+import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
-import { RsqlCondition } from '../../types';
-import { QueryParamsOperator } from '../query-params-operator';
+import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
 
-export class BetweenOperator extends QueryParamsOperator {
+export type BetweenValue = {
+  gte: number | Date;
+  lte: number | Date;
+};
+
+export class BetweenOperator extends QueryParamsOperator<
+  BetweenCondition<number | Date>,
+  BetweenValue
+> {
+  private stateValues: PrimitiveValue[];
+
   constructor(params: string) {
     super('btw=', params);
+    this.stateValues = PrimitiveValue.converterArray(this.getRawValue());
   }
 
-  value() {
-    const [gte, lte] = this.getRawValue().split(',');
+  safeParse(): QueryParamsOperatorSafeParse<BetweenValue> {
+    if (this.isNullOrUndefined()) {
+      return { success: false, error: `Invalid value for ${this.symbol} operator` };
+    }
 
-    return [parseRsqlDate(gte), parseRsqlDate(lte)];
+    if (!this.isArray() || this.stateValues.length !== 2) {
+      return {
+        success: false,
+        error: `Expected exactly 2 values for ${this.symbol} operator`,
+      };
+    }
+
+    const value = this.value();
+    if (value === null || value === undefined) {
+      return { success: false, error: `Invalid numeric/date values for ${this.symbol} operator` };
+    }
+    return { success: true, value };
   }
 
-  query(): Nullable<RsqlCondition> {
-    const [gte, lte] = this.value();
-    return { gte, lte } as RsqlCondition;
+  value(): Nullable<BetweenValue> {
+    const values = this.stateValues
+      .map((v) => v.asNumericOrDate())
+      .filter((v): v is number | Date => v !== null && v !== undefined);
+
+    if (values.length !== 2) return null;
+    return { gte: values[0], lte: values[1] };
+  }
+
+  query(): Nullable<BetweenCondition<number | Date>> {
+    const value = this.value();
+    if (!value) return null;
+    return value;
   }
 
   accept<T>(visitor: OperatorVisitor<T>, field: string): T {

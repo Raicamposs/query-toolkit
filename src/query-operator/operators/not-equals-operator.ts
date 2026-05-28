@@ -1,22 +1,39 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { parseRsqlValue } from '../../common/date-parser';
-import { OperatorVisitor } from '../../converters';
-import { RsqlCondition } from '../../types';
-import { QueryParamsOperator } from '../query-params-operator';
+import { NotEqualsCondition } from '../../common/types';
+import { PrimitiveValue, PrimitiveValueType } from '../../common/types/primitive-value';
+import type { OperatorVisitor } from '../../converters';
+import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
 
-export class NotEqualsOperator extends QueryParamsOperator {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(private readonly _value: any) {
-    super('!=', String(_value));
+export class NotEqualsOperator extends QueryParamsOperator<
+  NotEqualsCondition<PrimitiveValueType>,
+  PrimitiveValueType
+> {
+  private stateValue: PrimitiveValue;
+
+  constructor(params: string) {
+    super('!=', params);
+    this.stateValue = PrimitiveValue.converter(this.getRawValue());
   }
 
-  value() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return parseRsqlValue(this.getRawValue()) as any;
+  safeParse(): QueryParamsOperatorSafeParse<PrimitiveValueType> {
+    const value = this.value();
+    if (value === null || value === undefined) {
+      return { success: false, error: `Invalid value for ${this.symbol} operator` };
+    }
+    if (this.isArray()) {
+      return { success: false, error: 'Expected single value, got array' };
+    }
+    return { success: true, value };
   }
 
-  query(): Nullable<RsqlCondition> {
-    return { notEquals: this.value() } as RsqlCondition;
+  value(): Nullable<PrimitiveValueType> {
+    return this.stateValue.getValue();
+  }
+
+  query(): Nullable<NotEqualsCondition<PrimitiveValueType>> {
+    const value = this.value();
+    if (value === null || value === undefined) return null;
+    return { notEquals: value };
   }
 
   accept<T>(visitor: OperatorVisitor<T>, field: string): T {

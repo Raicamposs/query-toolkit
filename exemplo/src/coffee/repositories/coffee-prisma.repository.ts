@@ -34,7 +34,7 @@ export class CoffeeRepositoryPrisma implements ICoffeeRepository {
       rawData,
       pagination.limit,
       'next',
-      orderBy as Record<string, 'asc' | 'desc'>,
+      orderBy as unknown as Record<string, 'asc' | 'desc'>,
       !!pagination.cursor
     );
 

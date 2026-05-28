@@ -1,9 +1,9 @@
 import { isAssigned, isEmpty, isNullOrUndefined } from '@raicamposs/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveValue } from '../core/primitive-value';
+import { SqlPrimitiveValue } from '../core/sql-primitive-value';
 
 export class ClauseContains extends Clause {
-  private readonly compareFields: PrimitiveValue[];
+  private readonly compareFields: SqlPrimitiveValue[];
 
   constructor(
     private readonly field: string,
@@ -16,7 +16,7 @@ export class ClauseContains extends Clause {
     }
     this.compareFields = compareFields
       .filter((item) => isAssigned(item))
-      .map((item) => new PrimitiveValue(item));
+      .map((item) => new SqlPrimitiveValue(item));
   }
 
   build(option?: { startParamIndex?: number }) {

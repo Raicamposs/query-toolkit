@@ -51,13 +51,13 @@ describe('ClauseVisitor', () => {
   });
 
   it('should visit in', () => {
-    const op = new InOperator(['v1', 'v2']);
+    const op = new InOperator('in=v1,v2');
     const result = visitor.visitIn(op, 'field');
     expect(result).toBeInstanceOf(ClauseIn);
   });
 
   it('should visit not in', () => {
-    const op = new NotInOperator(['v1', 'v2']);
+    const op = new NotInOperator('out=v1,v2');
     const result = visitor.visitNotIn(op, 'field');
     expect(result).toBeInstanceOf(ClauseNotIn);
   });
@@ -107,7 +107,7 @@ describe('ClauseVisitor', () => {
   it('should throw error when visiting between with invalid value format', () => {
     const op = new BetweenOperator('btw=1');
     expect(() => visitor.visitBetween(op, 'field')).toThrow(
-      'Invalid value for Between operator on field "field". Expected an array with 2 elements.'
+      'Invalid value for Between operator on field "field". Expected an object with gte and lte.'
     );
   });
 

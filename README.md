@@ -8,7 +8,7 @@ A powerful TypeScript toolkit for building database queries. It provides tools f
 - **SQL Builder**: A fluent API for building SQL queries with automatic column mapping and validation.
 - **Data Mappers**: Easily map between database entities and domain models.
 - **Flexible Operators**: Support for comparison, logical, and array operators.
-- **Type Safety**: Built with TypeScript and Zod for robust validation and IDE support.
+- **Type Safety**: Built with TypeScript for robust validation and IDE support.
 
 ## Installation
 

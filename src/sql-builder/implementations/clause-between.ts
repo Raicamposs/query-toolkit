@@ -1,12 +1,12 @@
 import { isEmpty, isNullOrUndefined } from '@raicamposs/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveValue } from '../core/primitive-value';
+import { SqlPrimitiveValue } from '../core/sql-primitive-value';
 
 export type BetweenParam = Date | string | number;
 
 export class ClauseBetween extends Clause {
-  private readonly start: PrimitiveValue;
-  private readonly end: PrimitiveValue;
+  private readonly start: SqlPrimitiveValue;
+  private readonly end: SqlPrimitiveValue;
 
   constructor(
     private readonly field: string,
@@ -17,8 +17,8 @@ export class ClauseBetween extends Clause {
     if (isEmpty(this.field)) {
       throw new Error('Field is required');
     }
-    this.start = new PrimitiveValue(start);
-    this.end = new PrimitiveValue(end);
+    this.start = new SqlPrimitiveValue(start);
+    this.end = new SqlPrimitiveValue(end);
   }
 
   build(option?: { startParamIndex?: number }) {

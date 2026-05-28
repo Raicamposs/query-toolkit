@@ -1,5 +1,5 @@
 import { Clause } from '../core/clause';
-import { PrimitiveValueTypes } from '../core/primitive-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 
 /**
  * Representa uma cláusula SQL crua e customizada, com suporte a parametrização segura.
@@ -8,7 +8,7 @@ import { PrimitiveValueTypes } from '../core/primitive-value';
 export class ClauseRaw extends Clause {
   constructor(
     private readonly rawSql: string,
-    private readonly rawParams: PrimitiveValueTypes[] = []
+    private readonly rawParams: PrimitiveValueType[] = []
   ) {
     super();
   }

@@ -1,5 +1,5 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { PrimitiveValueTypes } from './primitive-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 import { TransformFunction } from './transform-function';
 /**
  * Represents a SQL query with its parameters separated.
@@ -8,7 +8,7 @@ export interface ParameterizedQuery {
   /** The SQL string with placeholders (e.g., $1, $2) */
   sql: string;
   /** The values corresponding to the placeholders */
-  params: Nullable<PrimitiveValueTypes>[];
+  params: Nullable<PrimitiveValueType>[];
 }
 
 /**

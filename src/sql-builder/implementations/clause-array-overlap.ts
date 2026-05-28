@@ -1,14 +1,14 @@
 import { isEmpty } from '@raicamposs/toolkit';
 import { ClauseBase } from '../core/clause-base';
-import { PrimitiveArrayValue } from '../core/primitive-array-value';
-import { PrimitiveValueTypes } from '../core/primitive-value';
+import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseArrayOverlap extends ClauseBase {
-  private readonly arrayValue: PrimitiveArrayValue;
+  private readonly arrayValue: SqlPrimitiveArrayValue;
 
-  constructor(field: string, value: PrimitiveValueTypes[]) {
+  constructor(field: string, value: PrimitiveValueType[]) {
     super(field, value[0]);
-    this.arrayValue = new PrimitiveArrayValue(value);
+    this.arrayValue = new SqlPrimitiveArrayValue(value);
   }
 
   build(option?: { startParamIndex?: number }) {

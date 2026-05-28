@@ -4,21 +4,23 @@ import { InOperator } from './in-operator';
 
 describe('InOperator', () => {
   it('deve retornar a lista de valores fornecida no construtor', () => {
-    const operator = new InOperator(['v1', 'v2', 3]);
+    const operator = new InOperator('("v1","v2",3)');
     expect(operator.value()).toEqual(['v1', 'v2', 3]);
   });
 
-  it('deve lancar um erro se values nao for uma lista/array', () => {
-    expect(() => new InOperator('not-an-array' as any)).toThrowError('Values must be an array');
+  it('deve tratar input sem formato de lista como array de um elemento', () => {
+    const operator = new InOperator('not-an-array');
+    expect(Array.isArray(operator.value())).toBe(true);
+    expect(operator.value()).toHaveLength(1);
   });
 
   it('deve retornar query object de in', () => {
-    const operator = new InOperator(['v1', 'v2']);
+    const operator = new InOperator('("v1","v2")');
     expect(operator.query()).toEqual({ in: ['v1', 'v2'] });
   });
 
   it('deve aceitar o visitor correspondente ao in', () => {
-    const operator = new InOperator(['v1']);
+    const operator = new InOperator('("v1")');
     const visitor = {
       visitIn: vi.fn().mockReturnValue('in-visited'),
     } as unknown as OperatorVisitor<string>;

@@ -33,20 +33,21 @@ describe('Query Operators Implementations', () => {
   } as any;
 
   describe('ArrayContainsOperator', () => {
-    it('should parse array values and query', () => {
-      const op = new ArrayContainsOperator('@>v1,v2');
-      expect(op.value()).toEqual(['v1', 'v2']);
-      expect(op.query()).toEqual({ arrayContains: ['v1', 'v2'] });
-      op.accept(mockVisitor, 'field');
-      expect(mockVisitor.visitArrayContains).toHaveBeenCalled();
+    it('deve usar o converter e visitor apropriados para ArrayContains', () => {
+      const op = new ArrayContainsOperator('("tag1","tag2")');
+      expect(op.value()).toEqual(['tag1', 'tag2']);
+      expect(op.query()).toEqual({ arrayContains: ['tag1', 'tag2'] });
+
+      op.accept(mockVisitor, 'tags');
+      expect(mockVisitor.visitArrayContains).toHaveBeenCalledWith(op, 'tags');
     });
   });
 
   describe('ArrayIsContainedByOperator', () => {
-    it('should parse array values and query', () => {
-      const op = new ArrayIsContainedByOperator('<@v1,v2');
-      expect(op.value()).toEqual(['v1', 'v2']);
-      expect(op.query()).toEqual({ arrayIsContainedBy: ['v1', 'v2'] });
+    it('deve usar o converter e visitor apropriados para ArrayIsContainedBy', () => {
+      const op = new ArrayIsContainedByOperator('("tag1","tag2")');
+      expect(op.value()).toEqual(['tag1', 'tag2']);
+      expect(op.query()).toEqual({ arrayIsContainedBy: ['tag1', 'tag2'] });
       op.accept(mockVisitor, 'field');
       expect(mockVisitor.visitArrayIsContainedBy).toHaveBeenCalled();
     });
@@ -134,7 +135,7 @@ describe('Query Operators Implementations', () => {
 
   describe('InOperator', () => {
     it('should parse array values and query', () => {
-      const op = new InOperator(['v1', 'v2']);
+      const op = new InOperator('("v1","v2")');
       expect(op.value()).toEqual(['v1', 'v2']);
       expect(op.query()).toEqual({ in: ['v1', 'v2'] });
       op.accept(mockVisitor, 'field');
@@ -144,7 +145,7 @@ describe('Query Operators Implementations', () => {
 
   describe('NotInOperator', () => {
     it('should parse array values and query', () => {
-      const op = new NotInOperator(['v1', 'v2']);
+      const op = new NotInOperator('("v1","v2")');
       expect(op.value()).toEqual(['v1', 'v2']);
       expect(op.query()).toEqual({ notIn: ['v1', 'v2'] });
       op.accept(mockVisitor, 'field');
@@ -154,8 +155,8 @@ describe('Query Operators Implementations', () => {
 
   describe('BetweenOperator', () => {
     it('should parse range values and query', () => {
-      const op = new BetweenOperator('btw=10,20');
-      expect(op.value()).toEqual([10, 20]);
+      const op = new BetweenOperator('btw=(10,20)');
+      expect(op.value()).toEqual({ gte: 10, lte: 20 });
       expect(op.query()).toEqual({ gte: 10, lte: 20 });
       op.accept(mockVisitor, 'field');
       expect(mockVisitor.visitBetween).toHaveBeenCalled();

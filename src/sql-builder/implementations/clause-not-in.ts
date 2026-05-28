@@ -1,19 +1,19 @@
 import { isEmpty } from '@raicamposs/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveArrayValue } from '../core/primitive-array-value';
-import { PrimitiveValueTypes } from '../core/primitive-value';
+import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseNotIn extends Clause {
-  private readonly compareFields: PrimitiveArrayValue;
+  private readonly compareFields: SqlPrimitiveArrayValue;
   constructor(
     private readonly field: string,
-    compareFields: PrimitiveValueTypes[]
+    compareFields: PrimitiveValueType[]
   ) {
     super();
     if (isEmpty(this.field)) {
       throw new Error('Field is required');
     }
-    this.compareFields = new PrimitiveArrayValue(compareFields);
+    this.compareFields = new SqlPrimitiveArrayValue(compareFields);
   }
 
   build(option?: { startParamIndex?: number }) {

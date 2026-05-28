@@ -56,9 +56,13 @@ export async function diagnosticsRoutes(app: FastifyInstance): Promise<void> {
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const query = request.query as Record<string, string>;
-      const queryParams = new QueryParamsParse(query).build();
+      const parser = new QueryParamsParse(query);
 
-      return reply.status(200).send(queryParams);
+      return reply.status(200).send({
+        params: parser.operators,
+        sort: parser.sort,
+        pagination: parser.pagination
+      });
     } catch (error) {
       return handleError(error, reply);
     }

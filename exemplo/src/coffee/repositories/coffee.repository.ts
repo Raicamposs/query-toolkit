@@ -1,4 +1,4 @@
-import { CursorPage, QueryParamsOperator, SortDirection } from "@raicamposs/query-toolkit";
+import { ArrayCondition, BooleanCondition, CursorPage, NumberCondition, QueryParamsOperator, SortDirection, StringCondition } from "@raicamposs/query-toolkit";
 import { Nullable } from "@raicamposs/toolkit";
 import { CreateCoffeeData } from "../dto/create-coffee-data";
 import { Coffee } from "../entities/coffee";
@@ -6,14 +6,14 @@ import { Coffee } from "../entities/coffee";
 
 export interface ListCoffeesParams {
   params: {
-    id?: Array<QueryParamsOperator>;
-    name?: Array<QueryParamsOperator>;
-    origin?: Array<QueryParamsOperator>;
-    roast?: Array<QueryParamsOperator>;
-    flavor?: Array<QueryParamsOperator>;
-    price?: Array<QueryParamsOperator>;
-    available?: Array<QueryParamsOperator>;
-    tags?: Array<QueryParamsOperator>;
+    id?: Array<QueryParamsOperator<NumberCondition, number>>;
+    name?: Array<QueryParamsOperator<StringCondition, string>>;
+    origin?: Array<QueryParamsOperator<StringCondition, string>>;
+    roast?: Array<QueryParamsOperator<StringCondition, string>>;
+    flavor?: Array<QueryParamsOperator<StringCondition, string>>;
+    price?: Array<QueryParamsOperator<NumberCondition, number>>;
+    available?: Array<QueryParamsOperator<BooleanCondition, boolean>>;
+    tags?: Array<QueryParamsOperator<ArrayCondition, string[]>>;
   }
   sort?: Record<string, SortDirection>;
   pagination?: CursorPage;

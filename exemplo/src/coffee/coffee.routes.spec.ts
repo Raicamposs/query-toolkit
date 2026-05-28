@@ -54,6 +54,49 @@ describe('Coffee Routes Integration Tests (Fastify + In-Memory Repository)', () 
       expect(typeof body.meta.nextCursor).toBe('string'); // Next cursor should be generated
       expect(body.meta.offset).toBeUndefined();
     });
+
+    it('should return 400 when query parameters are invalid', async () => {
+      const app = buildApp();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/coffees?price=gt=invalid',
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe('Validation Error');
+      expect(body.message).toContain('validação');
+      expect(body.details).toBeDefined();
+    });
+
+    it('should return 400 when limit is invalid', async () => {
+      const app = buildApp();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/coffees?limit=abc',
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe('Validation Error');
+      expect(body.details[0].message).toContain('Limit must be a positive integer');
+    });
+
+    it('should return 400 when sort is invalid', async () => {
+      const app = buildApp();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/coffees?sort=name:invalid',
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe('Validation Error');
+      expect(body.details[0].message).toContain('Sort must follow pattern');
+    });
   });
 
   describe('GET /coffees/:id', () => {

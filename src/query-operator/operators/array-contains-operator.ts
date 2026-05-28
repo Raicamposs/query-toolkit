@@ -1,26 +1,37 @@
-import { isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
+import { ArrayContainsCondition } from '../../common/types';
+import { PrimitiveValue, PrimitiveValueType } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
-import { ArrayParamsValuesSchema, RsqlCondition } from '../../types';
-import { QueryParamsOperator } from '../query-params-operator';
+import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
 
-export class ArrayContainsOperator extends QueryParamsOperator {
+export class ArrayContainsOperator extends QueryParamsOperator<
+  ArrayContainsCondition,
+  PrimitiveValueType[]
+> {
+  private stateValues: PrimitiveValue[];
+
   constructor(params: string) {
     super('@>', params);
+    this.stateValues = PrimitiveValue.converterArray(this.getRawValue());
   }
 
-  value() {
-    const filters = this.getRawValue()
-      .split(',')
-      .map((item) => item.trim())
-      .filter((item) => item !== '');
-
-    return ArrayParamsValuesSchema.parse(filters);
+  safeParse(): QueryParamsOperatorSafeParse<PrimitiveValueType[]> {
+    if (this.isNullOrUndefined()) {
+      return { success: false, error: `Invalid value for ${this.symbol} operator` };
+    }
+    if (!this.isArray()) {
+      return { success: false, error: 'Expected array, got single value' };
+    }
+    return { success: true, value: this.value() };
   }
 
-  query(): Nullable<RsqlCondition> {
-    const value = this.value();
-    if (isNullOrUndefined(value)) return undefined;
-    return { arrayContains: value } as RsqlCondition;
+  value(): PrimitiveValueType[] {
+    return this.stateValues
+      .map((v) => v.getValue())
+      .filter((v): v is PrimitiveValueType => v !== null && v !== undefined);
+  }
+
+  query(): ArrayContainsCondition {
+    return { arrayContains: this.value() };
   }
 
   accept<T>(visitor: OperatorVisitor<T>, field: string): T {

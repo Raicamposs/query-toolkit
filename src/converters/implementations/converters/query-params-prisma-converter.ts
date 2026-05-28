@@ -1,7 +1,7 @@
 import { isNullOrUndefined } from '@raicamposs/toolkit';
 import { SortDirection } from '../../../common';
+import { QueryableFields } from '../../../common/types';
 import { QueryParamsOperator } from '../../../query-operator';
-import { QueryableFields } from '../../../types';
 import { QueryParamsConverter } from '../../core/query-params-converter';
 import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
 import { ISortConverter } from '../../core/sort-converter-interface';
@@ -16,7 +16,10 @@ export class QueryParamsPrismaConverter<T = unknown>
   private visitor: PrismaVisitor;
   constructor(
     private readonly operators: Partial<
-      Record<QueryableFields<T>, QueryParamsOperator | QueryParamsOperator[]>
+      Record<
+        QueryableFields<T>,
+        QueryParamsOperator<unknown, unknown> | QueryParamsOperator<unknown, unknown>[]
+      >
     >
   ) {
     this.converter = new QueryParamsConverter<T>(this.operators);

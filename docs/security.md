@@ -53,5 +53,5 @@ Se a requisição de API estourar qualquer um desses limites, uma exceção expl
 ## 💡 Melhores Práticas Recomendadas
 
 1. **Sempre use `build()`**: Nunca utilize o método `.build()` cru em queries construídas com entradas diretas da URL em ambientes de produção. O método `.build()` concatena os valores e deve ser reservado para depuração local ou scripts internos confiáveis.
-2. **Defina esquemas Zod nas suas APIs**: Valide os query parameters de entrada com Zod antes de passá-los para o parser do RSQL. Isso fornece uma camada adicional de validação sintática e restrição de tipos.
+2. **Valide as entradas nas suas APIs**: Valide os query parameters de entrada com a ferramenta de sua preferência antes de passá-los para o parser do RSQL. Isso fornece uma camada adicional de validação sintática e restrição de tipos.
 3. **Limite o tamanho de string na URL**: Configure os middlewares do seu servidor web (Fastify, Express, NestJS) para rejeitar payloads de URL excessivamente longos (acima de 2048 caracteres).

@@ -1,4 +1,4 @@
-import { CursorPage, QueryParamsParse, RsqlQueryParams } from '@raicamposs/query-toolkit';
+import { CursorPage, QueryParamsParse } from '@raicamposs/query-toolkit';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { CoffeeContainer } from './coffee.container';
@@ -24,12 +24,46 @@ export class CoffeeController {
   async list(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
     try {
       const query = request.query as Record<string, string>;
-      const clauses = new QueryParamsParse<Coffee>(query as RsqlQueryParams<Coffee>).build();
-      const pagination = (clauses.pagination as CursorPage | undefined) ?? new CursorPage(20);
+
+      const querySchema = z.object({
+        limit: z.string().regex(/^\d+$/, 'Limit must be a positive integer').optional(),
+        cursor: z.string().optional(),
+        sort: z.string().regex(/^[a-zA-Z0-9_]+:(asc|desc)(,[a-zA-Z0-9_]+:(asc|desc))*$/, 'Sort must follow pattern field:asc|desc').optional(),
+      }).passthrough();
+
+      const parsedQuery = querySchema.safeParse(query);
+      if (!parsedQuery.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Erros de validação nos parâmetros de busca',
+          details: parsedQuery.error.issues,
+        });
+      }
+
+      const queryParams = new QueryParamsParse<Coffee>(query, {
+        id: 'number',
+        name: 'string',
+        origin: 'string',
+        price: 'number',
+        roast: 'string',
+        flavor: 'string',
+        available: 'boolean',
+        tags: 'string'
+      });
+      const validationResult = queryParams.validate();
+      if (!validationResult.success) {
+        return reply.status(400).send({
+          error: 'Validation Error',
+          message: 'Erros de validação nos parâmetros de busca',
+          details: validationResult.errors,
+        });
+      }
+
+      const pagination = queryParams.paginationAsCursorPage(new CursorPage(20));
 
       const result = await this.container.listCoffeesUseCase.execute({
-        params: clauses.params,
-        sort: clauses.sort,
+        params: queryParams.operators,
+        sort: queryParams.sort,
         pagination: pagination,
       });
 

@@ -1,5 +1,5 @@
 import { CursorPage } from '../common';
-import { QueryableFields } from '../types';
+import { QueryableFields } from '../common/types';
 import { SqlBuilder } from './sql-builder';
 
 export interface CursorParams {

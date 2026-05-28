@@ -1,5 +1,5 @@
-import { RsqlQueryParams } from '../types';
-import { OPERATORS } from '../types/operator-symbol';
+import { RsqlQueryParams } from '../common/types';
+import { OPERATORS } from '../common/types/operator-symbol';
 
 /**
  * Analisador de strings RSQL para conversão de parâmetros brutos da URL em estruturas de dados tipadas.

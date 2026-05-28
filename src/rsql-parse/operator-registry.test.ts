@@ -1,31 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
-import {
-  ArrayContainsOperator,
-  ArrayIsContainedByOperator,
-  ArrayOverlapOperator,
-  BetweenOperator,
-  ContainsOperator,
-  EqualsOperator,
-  GreaterThanOperator,
-  GreaterThanOrEqualsOperator,
-  InOperator,
-  LessThanOperator,
-  LessThanOrEqualOperator,
-  NotContainsOperator,
-  NotEqualsOperator,
-  NotInOperator,
-  UnknownOperator,
-} from '../query-operator';
-import { QueryParamsOperator } from '../query-operator';
-import { OperatorVisitor } from '../converters';
 import { Nullable } from '@raicamposs/toolkit';
-import { RsqlCondition } from '../types';
+import { describe, expect, it } from 'vitest';
+import { RsqlCondition } from '../common/types';
+import { OperatorVisitor } from '../converters';
+import { EqualsOperator, QueryParamsOperator } from '../query-operator';
 import { OperatorRegistry, parseRsqlListValue } from './operator-registry';
 
 // Operador customizado fictício para simular o caso geográfico (PostGIS)
-class GeoDistanceOperator extends QueryParamsOperator {
+class GeoDistanceOperator extends QueryParamsOperator<RsqlCondition, number> {
   constructor(public readonly rawParams: string) {
     super('<->=' as any, rawParams);
+  }
+
+  safeParse(): { success: true; value: number } | { success: false; error: string } {
+    return { success: true, value: this.value() };
   }
 
   value() {

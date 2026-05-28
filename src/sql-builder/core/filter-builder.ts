@@ -1,11 +1,5 @@
 import { isEmpty, isNullOrUndefined } from '@raicamposs/toolkit';
-import { QueryableFields } from '../../types';
-import { Clause } from './clause';
-import { SQL_BUILDER_CONSTANTS } from './constants';
-import { PrimitiveValueTypes } from './primitive-value';
-import { InvalidCursorError } from './sql-builder-errors';
-import { TransformFunction } from './transform-function';
-import { SqlBuilderConfig } from './config';
+import { QueryableFields } from '../../common/types';
 import {
   BetweenParam,
   ClauseAnd,
@@ -31,8 +25,14 @@ import {
   ClauseNotIn,
   ClauseOr,
   ClauseRaw,
-  Condition,
+  SqlCondition,
 } from '../implementations';
+import { Clause } from './clause';
+import { SqlBuilderConfig } from './config';
+import { SQL_BUILDER_CONSTANTS } from './constants';
+import { InvalidCursorError } from './sql-builder-errors';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
+import { TransformFunction } from './transform-function';
 
 export abstract class FilterBuilder<Table> {
   protected where: Clause[] = [];
@@ -94,7 +94,7 @@ export abstract class FilterBuilder<Table> {
    * @param field The field to filter on.
    * @param compareFields The array of values to check against.
    */
-  whereIn(field: QueryableFields<Table>, compareFields: PrimitiveValueTypes[]): this {
+  whereIn(field: QueryableFields<Table>, compareFields: PrimitiveValueType[]): this {
     return this.andFilter(new ClauseIn(this.column(field), compareFields));
   }
 
@@ -103,7 +103,7 @@ export abstract class FilterBuilder<Table> {
    * @param field The field to filter on.
    * @param compareFields The array of values to exclude.
    */
-  whereNotIn(field: QueryableFields<Table>, compareFields: PrimitiveValueTypes[]): this {
+  whereNotIn(field: QueryableFields<Table>, compareFields: PrimitiveValueType[]): this {
     return this.andFilter(new ClauseNotIn(this.column(field), compareFields));
   }
 
@@ -240,12 +240,12 @@ export abstract class FilterBuilder<Table> {
    * condition objects are never silently discarded.
    */
   whereConditions(
-    values: Partial<Record<QueryableFields<Table>, Condition>>,
+    values: Partial<Record<QueryableFields<Table>, SqlCondition>>,
     transform?: TransformFunction
   ): this {
     for (const [key, value] of Object.entries(values)) {
       if (!isNullOrUndefined(value)) {
-        this.whereCondition(key as QueryableFields<Table>, value as Condition, transform);
+        this.whereCondition(key as QueryableFields<Table>, value as SqlCondition, transform);
       }
     }
     return this;
@@ -259,7 +259,7 @@ export abstract class FilterBuilder<Table> {
    */
   whereCondition(
     field: QueryableFields<Table>,
-    value: Condition,
+    value: SqlCondition,
     transform?: TransformFunction
   ): this {
     return this.andFilter(new ClauseCondition(field.toString(), value, transform));
@@ -292,7 +292,7 @@ export abstract class FilterBuilder<Table> {
    *
    * Note: passes through andFilter() so that maxWhereClauses is always respected.
    */
-  whereRaw(raw: string, params: PrimitiveValueTypes[] = []): this {
+  whereRaw(raw: string, params: PrimitiveValueType[] = []): this {
     if (!isEmpty(raw)) {
       this.checkSecurity(raw, params);
       this.andFilter(new ClauseRaw(raw, params));
@@ -313,7 +313,7 @@ export abstract class FilterBuilder<Table> {
   ): this {
     const boundValue = typeof jsonValue === 'object' ? JSON.stringify(jsonValue) : jsonValue;
     return this.andFilter(
-      new ClauseRaw(`${this.column(field)} @> ?`, [boundValue as PrimitiveValueTypes])
+      new ClauseRaw(`${this.column(field)} @> ?`, [boundValue as PrimitiveValueType])
     );
   }
 
@@ -352,7 +352,7 @@ export abstract class FilterBuilder<Table> {
     }
 
     return this.andFilter(
-      new ClauseRaw(`${pathExpr} ${operator} ?`, [value as PrimitiveValueTypes])
+      new ClauseRaw(`${pathExpr} ${operator} ?`, [value as PrimitiveValueType])
     );
   }
 
@@ -410,7 +410,7 @@ export abstract class FilterBuilder<Table> {
 
       return {
         column: this.column(order.field),
-        value: value as PrimitiveValueTypes,
+        value: value as PrimitiveValueType,
         direction: order.direction,
       };
     });

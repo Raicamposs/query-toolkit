@@ -1,8 +1,11 @@
+import { QueryableFields } from '../../common/types';
 import { QueryParamsOperator } from '../../query-operator';
-import { QueryableFields } from '../../types';
 import { OperatorVisitor } from './operator-visitor';
 
-type Operator<T> = Record<QueryableFields<T>, QueryParamsOperator | QueryParamsOperator[]>;
+type Operator<T> = Record<
+  QueryableFields<T>,
+  QueryParamsOperator<unknown, unknown> | QueryParamsOperator<unknown, unknown>[]
+>;
 
 /**
  * Classe auxiliar para converter múltiplas instâncias de QueryParamsOperator em diferentes formatos.
@@ -21,7 +24,7 @@ export class QueryParamsConverter<T = unknown> {
       const operatorList = Array.isArray(data) ? data : [data];
 
       const validOperators = operatorList.filter(
-        (op): op is QueryParamsOperator => op instanceof QueryParamsOperator
+        (op): op is QueryParamsOperator<unknown, unknown> => op instanceof QueryParamsOperator
       );
 
       if (validOperators.length === 0) continue;

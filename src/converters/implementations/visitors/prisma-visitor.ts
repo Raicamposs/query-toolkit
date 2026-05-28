@@ -96,21 +96,16 @@ export class PrismaVisitor implements OperatorVisitor<PrismaWhereClause> {
   visitBetween(operator: BetweenOperator, field: string): PrismaWhereClause {
     const value = operator.value();
 
-    if (
-      !Array.isArray(value) ||
-      value.length !== 2 ||
-      isNullOrUndefined(value[0]) ||
-      isNullOrUndefined(value[1])
-    ) {
+    if (!value || typeof value !== 'object' || !('gte' in value) || !('lte' in value)) {
       throw new Error(
-        `Invalid value for Between operator on field "${field}". Expected an array with 2 elements.`
+        `Invalid value for Between operator on field "${field}". Expected an object with gte and lte.`
       );
     }
 
     return {
       [field]: {
-        gte: value[0],
-        lte: value[1],
+        gte: value.gte,
+        lte: value.lte,
       },
     };
   }

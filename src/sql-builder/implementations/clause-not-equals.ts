@@ -1,9 +1,9 @@
 import { isNullOrUndefined } from '@raicamposs/toolkit';
 import { ClauseBase } from '../core/clause-base';
-import { PrimitiveValueTypes } from '../core/primitive-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseNotEquals extends ClauseBase {
-  constructor(field: string, value: PrimitiveValueTypes) {
+  constructor(field: string, value: PrimitiveValueType) {
     super(field, value);
   }
 

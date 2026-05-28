@@ -15,9 +15,10 @@ describe('GreaterThanOperator', () => {
     expect(value.toISOString()).toContain('2024-01-01');
   });
 
-  it('deve parsear valor string literal se nao for numero nem data', () => {
+  it('deve retornar null para valor string literal (nao e numero nem data)', () => {
     const operator = new GreaterThanOperator('gt=abc');
-    expect(operator.value()).toBe('abc');
+    expect(operator.value()).toBeNull();
+    expect(operator.safeParse().success).toBe(false);
   });
 
   it('deve retornar query object de gt', () => {

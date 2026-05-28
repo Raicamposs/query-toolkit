@@ -1,12 +1,12 @@
 import { coalesce, isEmpty, ObjectEntries } from '@raicamposs/toolkit';
 import { ClassicPage, CursorPage, SortDirection, SortParser } from '../common';
+import { QueryableFields, RsqlQueryParams } from '../common/types';
 import { QueryParamsOperator } from '../query-operator';
-import { QueryableFields, RsqlQueryParams } from '../types';
 import { OperatorRegistry } from './operator-registry';
 
 export type ParamsOperators<T extends object> = Record<
   Exclude<QueryableFields<T>, 'sort' | 'limit' | 'offset' | 'page' | 'cursor'>,
-  Array<QueryParamsOperator>
+  Array<QueryParamsOperator<unknown, unknown>>
 >;
 
 export type QueryParams<T extends object> = {
@@ -15,21 +15,90 @@ export type QueryParams<T extends object> = {
   pagination?: ClassicPage | CursorPage;
 };
 
+export type FieldTypes = 'string' | 'number' | 'boolean' | 'date';
+
 export class QueryParamsParse<T extends object> {
-  private readonly validKeys: Set<QueryableFields<T>>;
+  private readonly validKeys: Map<QueryableFields<T>, FieldTypes>;
+  public readonly operators: ParamsOperators<T>;
+  public readonly sort?: Record<QueryableFields<T>, SortDirection>;
+  public readonly pagination?: ClassicPage | CursorPage;
 
   constructor(
     private readonly params: RsqlQueryParams<T>,
-    shape?: { [K in QueryableFields<T>]: true }
+    private readonly shape?: Partial<Record<QueryableFields<T>, FieldTypes>>
   ) {
-    this.validKeys = new Set(shape ? (Object.keys(shape) as QueryableFields<T>[]) : []);
+    this.validKeys = new Map(
+      shape ? (Object.entries(shape) as [QueryableFields<T>, FieldTypes][]) : []
+    );
+    this.operators = this.buildParams();
+    this.sort = this.buildSort();
+    this.pagination = this.buildPagination();
   }
 
-  build(): QueryParams<T> {
+  get isClassicPage(): boolean {
+    return this.pagination instanceof ClassicPage;
+  }
+
+  get isCursorPage(): boolean {
+    return this.pagination instanceof CursorPage;
+  }
+
+  get hasPagination(): boolean {
+    return !!this.pagination;
+  }
+
+  get hasSort(): boolean {
+    return !!this.sort;
+  }
+
+  get hasOperators(): boolean {
+    return ObjectEntries(this.operators).length > 0;
+  }
+
+  paginationAsClassicPage(defaultPage?: ClassicPage): ClassicPage | undefined {
+    return this.isClassicPage ? (this.pagination as ClassicPage) : defaultPage;
+  }
+
+  paginationAsCursorPage(defaultPage?: CursorPage): CursorPage | undefined {
+    return this.isCursorPage ? (this.pagination as CursorPage) : defaultPage;
+  }
+
+  public validate(): { success: boolean; errors: string[] } {
+    const validationErrors: string[] = [];
+    for (const [field, operators] of ObjectEntries(this.operators)) {
+      for (const operator of operators as Array<QueryParamsOperator<unknown, unknown>>) {
+        const parseResult = operator.safeParse();
+
+        if (!parseResult.success) {
+          validationErrors.push(`Field '${field}': ${parseResult.error}`);
+          continue;
+        }
+
+        const expectedType = this.validKeys.get(field as QueryableFields<T>);
+
+        if (expectedType) {
+          const value = operator.value();
+          const baseType = expectedType.replace('[]', '');
+
+          const checkType = (v: unknown) => {
+            if (baseType === 'date') return v instanceof Date;
+            return typeof v === baseType;
+          };
+
+          const isInvalid = Array.isArray(value)
+            ? value.some((v) => !checkType(v))
+            : !checkType(value);
+
+          if (isInvalid) {
+            validationErrors.push(`Field '${field}': expected type '${expectedType}'.`);
+          }
+        }
+      }
+    }
+
     return {
-      params: this.buildParams(),
-      sort: this.buildSort(),
-      pagination: this.buildPagination(),
+      success: validationErrors.length === 0,
+      errors: validationErrors,
     };
   }
 
@@ -88,7 +157,7 @@ export class QueryParamsParse<T extends object> {
 
   private buildParams(): ParamsOperators<T> {
     const IGNORED_KEYS = ['sort', 'limit', 'offset', 'page', 'cursor'];
-    const output: Record<string, Array<QueryParamsOperator>> = {};
+    const output: Record<string, Array<QueryParamsOperator<unknown, unknown>>> = {};
     ObjectEntries(coalesce(this.params, {})).reduce((acc, [key, value]) => {
       if (isEmpty(value)) return acc;
       if (isEmpty(key)) return acc;
@@ -109,7 +178,7 @@ export class QueryParamsParse<T extends object> {
       return acc;
     }, output);
 
-    return output as Record<QueryableFields<T>, Array<QueryParamsOperator>>;
+    return output as Record<QueryableFields<T>, Array<QueryParamsOperator<unknown, unknown>>>;
   }
 
   /**
@@ -117,15 +186,23 @@ export class QueryParamsParse<T extends object> {
    * @returns Objeto com os operadores RSQL.
    */
   asRsqlOperatorsObject() {
-    const queryParams: Record<string, Array<QueryParamsOperator>> = this.buildParams();
+    const queryParams: Record<
+      string,
+      Array<QueryParamsOperator<unknown, unknown>>
+    > = this.buildParams();
     return ObjectEntries(queryParams)
       .map(([key, value]) => {
         const query = value
           .map((v) => v.query())
           .reduce(
-            (acc, curr) => {
+            (acc: Record<string, unknown>, curr) => {
               if (curr) {
-                Object.assign(acc, curr);
+                const currentObj = curr as Record<string, unknown>;
+                for (const k in currentObj) {
+                  if (Object.prototype.hasOwnProperty.call(currentObj, k)) {
+                    acc[k] = currentObj[k];
+                  }
+                }
               }
               return acc;
             },
@@ -133,6 +210,17 @@ export class QueryParamsParse<T extends object> {
           );
         return { [key]: query };
       })
-      .reduce((acc, curr) => Object.assign(acc, curr), {} as Record<string, unknown>);
+      .reduce(
+        (acc: Record<string, unknown>, curr) => {
+          const currentObj = curr as Record<string, unknown>;
+          for (const k in currentObj) {
+            if (Object.prototype.hasOwnProperty.call(currentObj, k)) {
+              acc[k] = currentObj[k];
+            }
+          }
+          return acc;
+        },
+        {} as Record<string, unknown>
+      );
   }
 }

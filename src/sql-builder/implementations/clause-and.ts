@@ -1,6 +1,6 @@
 import { isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveValueTypes } from '../core/primitive-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseAnd extends Clause {
   private readonly value: Clause[] = [];
@@ -20,7 +20,7 @@ export class ClauseAnd extends Clause {
 
     let currentIndex = option?.startParamIndex ?? 1;
     const parts: string[] = [];
-    const allParams: Nullable<PrimitiveValueTypes>[] = [];
+    const allParams: Nullable<PrimitiveValueType>[] = [];
 
     for (const clause of this.value) {
       const built = clause.build({ startParamIndex: currentIndex });

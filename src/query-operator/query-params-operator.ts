@@ -1,30 +1,30 @@
-// Equality (==) : equals
-// Inequality (!=) : not equals
-// Ilike (~=) : ilike in sentence
-// Ilike number string (+=) : ilike factor number in sentence
-// NotLike (!~=) : not like in sentence
-// In (in=) : in
-// NotIn (out=) : notIn
-// Greater than (gt=) : gt
-// Greater than or equal to (gte) : gte
-// Less than (lt=) : lt
-// Less than or equal to (lte=) : lte
-// Between (btw=) : btw
-
-import { Nullable } from '@raicamposs/toolkit';
+import { isAssigned, isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
+import { OperatorSymbolType } from '../common/types/operator-symbol';
 import type { OperatorVisitor } from '../converters';
-import { PrimitiveValueTypes } from '../sql-builder/core';
-import { RsqlCondition } from '../types';
-import { OperatorSymbolType } from '../types/operator-symbol';
 
-export abstract class QueryParamsOperator {
+export type QueryParamsOperatorSuccess<ValueType> = {
+  success: true;
+  value: ValueType;
+};
+
+export type QueryParamsOperatorError = {
+  success: false;
+  error: string;
+};
+
+export type QueryParamsOperatorSafeParse<ValueType> =
+  | QueryParamsOperatorSuccess<ValueType>
+  | QueryParamsOperatorError;
+
+export abstract class QueryParamsOperator<Condition, ValueType> {
   constructor(
     public readonly symbol: OperatorSymbolType | '',
     public readonly params: string
   ) {}
 
-  abstract value(): PrimitiveValueTypes | PrimitiveValueTypes[];
-  abstract query(): Nullable<RsqlCondition>;
+  abstract safeParse(): QueryParamsOperatorSafeParse<ValueType>;
+  abstract value(): Nullable<ValueType>;
+  abstract query(): Nullable<Condition>;
 
   /**
    * Accept a visitor to convert this operator to a specific format
@@ -38,10 +38,34 @@ export abstract class QueryParamsOperator {
    * Helper to get the value part of the parameter string by removing the operator symbol.
    */
   protected getRawValue(): string {
-    if (!this.params.includes(this.symbol)) {
+    if (!this.symbol || !this.params.includes(this.symbol)) {
       return this.params;
     }
     const [, value] = this.params.split(this.symbol);
     return value;
+  }
+
+  isValid(): this is QueryParamsOperatorSuccess<ValueType> {
+    return this.safeParse().success;
+  }
+
+  isInvalid(): this is QueryParamsOperatorError {
+    return !this.safeParse().success;
+  }
+
+  isAssigned() {
+    return isAssigned(this.value());
+  }
+
+  isNullOrUndefined() {
+    return isNullOrUndefined(this.value());
+  }
+
+  isArray() {
+    const value = this.value();
+    if (isNullOrUndefined(value)) {
+      return false;
+    }
+    return Array.isArray(value);
   }
 }

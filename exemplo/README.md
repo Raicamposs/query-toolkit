@@ -158,7 +158,7 @@ Retorna um café por ID. Utiliza `coffeeMapper.entityToModel()` para mapear os c
 
 ### `POST /coffees`
 
-Cria um novo café. Body validado com Zod.
+Cria um novo café. Body validado estruturalmente.
 
 **Body:**
 ```json

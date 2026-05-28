@@ -1,12 +1,12 @@
 import { isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
-import { QueryableFields } from '../types';
+import { QueryableFields } from '../common/types';
 import { ParameterizedQuery } from './core/clause';
 import { SqlBuilderConfig } from './core/config';
 import { SQL_BUILDER_CONSTANTS } from './core/constants';
 import { FilterBuilder } from './core/filter-builder';
-import { PrimitiveValueTypes } from './core/primitive-value';
 import { DuplicateJoinError, MaxClausesExceededError } from './core/sql-builder-errors';
 import { SQL_KEYWORDS } from './core/sql-keywords';
+import { PrimitiveValueType } from '../common/types/primitive-value';
 
 /** Internal representation of a SELECT column entry */
 interface SelectEntry {
@@ -30,7 +30,7 @@ interface JoinEntry {
 /** Telemetry event triggered when build() completes successfully */
 export interface QueryBuildEvent {
   sql: string;
-  params: Nullable<PrimitiveValueTypes>[];
+  params: Nullable<PrimitiveValueType>[];
   durationMs: number;
 }
 
@@ -373,7 +373,7 @@ export class SqlBuilder<Table> extends FilterBuilder<Table> {
   build(): ParameterizedQuery {
     const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const parts: string[] = [this.resolveSelectClause()];
-    const allParams: Nullable<PrimitiveValueTypes>[] = [];
+    const allParams: Nullable<PrimitiveValueType>[] = [];
     let paramIndex = 1;
 
     // JOINs — inserted immediately after FROM, before WHERE

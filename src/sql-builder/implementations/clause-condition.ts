@@ -1,7 +1,8 @@
 import { isNullOrUndefined, Nullable } from '@raicamposs/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveArrayValue } from '../core/primitive-array-value';
-import { PrimitiveValue, PrimitiveValueTypes } from '../core/primitive-value';
+import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
+import { SqlPrimitiveValue } from '../core/sql-primitive-value';
 import { TransformFunction } from '../core/transform-function';
 
 /**
@@ -25,14 +26,14 @@ export type ConditionKey =
   | 'arrayIsContainedBy'
   | 'arrayOverlap';
 
-export type Condition = Partial<
+export type SqlCondition = Partial<
   Record<ConditionKey, string | number | Date | boolean | Array<string | number | Date | boolean>>
 >;
 
 export class ClauseCondition extends Clause {
   constructor(
     private readonly field: string,
-    private readonly condition: Condition,
+    private readonly condition: SqlCondition,
     private readonly transformFunction?: TransformFunction
   ) {
     super();
@@ -42,12 +43,12 @@ export class ClauseCondition extends Clause {
     if (isNullOrUndefined(this.field) || isNullOrUndefined(this.condition)) return undefined;
 
     let paramIndex = option?.startParamIndex ?? 1;
-    const allParams: Nullable<PrimitiveValueTypes>[] = [];
+    const allParams: Nullable<PrimitiveValueType>[] = [];
 
     // Date is an object, so we must check it before the general object check
     if (this.condition instanceof Date || typeof this.condition !== 'object') {
-      const value = new PrimitiveValue(
-        this.condition as unknown as PrimitiveValueTypes,
+      const value = new SqlPrimitiveValue(
+        this.condition as unknown as PrimitiveValueType,
         this.transformFunction
       ).toValue();
       return this.transformParameterized('equals', value, paramIndex);
@@ -57,12 +58,12 @@ export class ClauseCondition extends Clause {
 
     for (const key of Object.keys(this.condition) as ConditionKey[]) {
       const conditionValue = this.condition[key];
-      let value: Nullable<PrimitiveValueTypes> | Nullable<PrimitiveValueTypes>[];
+      let value: Nullable<PrimitiveValueType> | Nullable<PrimitiveValueType>[];
 
       if (Array.isArray(conditionValue)) {
-        value = new PrimitiveArrayValue(conditionValue, this.transformFunction).toValue();
+        value = new SqlPrimitiveArrayValue(conditionValue, this.transformFunction).toValue();
       } else {
-        value = new PrimitiveValue(conditionValue, this.transformFunction).toValue();
+        value = new SqlPrimitiveValue(conditionValue, this.transformFunction).toValue();
       }
 
       const built = this.transformParameterized(key, value, paramIndex);
@@ -83,22 +84,22 @@ export class ClauseCondition extends Clause {
 
   private transformParameterized(
     filter: string,
-    value: Nullable<PrimitiveValueTypes> | Nullable<PrimitiveValueTypes>[],
+    value: Nullable<PrimitiveValueType> | Nullable<PrimitiveValueType>[],
     paramIndex: number
-  ): { sql: string; params: Nullable<PrimitiveValueTypes>[] } | undefined {
+  ): { sql: string; params: Nullable<PrimitiveValueType>[] } | undefined {
     if (isNullOrUndefined(value)) return undefined;
 
     switch (filter) {
       case 'equals':
         return {
           sql: `${this.field} = $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
 
       case 'notEquals':
         return {
           sql: `${this.field} <> $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
 
       case 'notContains':
@@ -118,7 +119,7 @@ export class ClauseCondition extends Clause {
         const placeholders = value.map((_, i) => `$${paramIndex + i}`).join(', ');
         return {
           sql: `${this.field} in (${placeholders})`,
-          params: value as unknown as Nullable<PrimitiveValueTypes>[],
+          params: value as unknown as Nullable<PrimitiveValueType>[],
         };
       }
 
@@ -127,38 +128,38 @@ export class ClauseCondition extends Clause {
         const placeholders = value.map((_, i) => `$${paramIndex + i}`).join(', ');
         return {
           sql: `not ${this.field} in (${placeholders})`,
-          params: value as unknown as Nullable<PrimitiveValueTypes>[],
+          params: value as unknown as Nullable<PrimitiveValueType>[],
         };
       }
 
       case 'gt':
         return {
           sql: `${this.field} > $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
 
       case 'gte':
         return {
           sql: `${this.field} >= $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
 
       case 'lt':
         return {
           sql: `${this.field} < $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
 
       case 'lte':
         return {
           sql: `${this.field} <= $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
 
       case 'arrayContains':
         return this.buildWhereArrayParameterized(
           this.field,
-          value as unknown as Nullable<PrimitiveValueTypes>[],
+          value as unknown as Nullable<PrimitiveValueType>[],
           '@>',
           paramIndex
         );
@@ -166,7 +167,7 @@ export class ClauseCondition extends Clause {
       case 'arrayIsContainedBy':
         return this.buildWhereArrayParameterized(
           this.field,
-          value as unknown as Nullable<PrimitiveValueTypes>[],
+          value as unknown as Nullable<PrimitiveValueType>[],
           '<@',
           paramIndex
         );
@@ -174,7 +175,7 @@ export class ClauseCondition extends Clause {
       case 'arrayOverlap':
         return this.buildWhereArrayParameterized(
           this.field,
-          value as unknown as Nullable<PrimitiveValueTypes>[],
+          value as unknown as Nullable<PrimitiveValueType>[],
           '&&',
           paramIndex
         );
@@ -182,14 +183,14 @@ export class ClauseCondition extends Clause {
       default:
         return {
           sql: `${this.field} = $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueTypes>],
+          params: [value as unknown as Nullable<PrimitiveValueType>],
         };
     }
   }
 
   private buildWhereArrayParameterized(
     field: string,
-    value: Nullable<PrimitiveValueTypes>[],
+    value: Nullable<PrimitiveValueType>[],
     operador: string,
     paramIndex: number
   ) {
