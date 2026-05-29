@@ -1,5 +1,5 @@
 import { Nullable } from '@raicamposs/toolkit';
-import { parseRsqlDate } from '../../common/date-parser';
+import { parseRsqlValue } from '../../common/date-parser';
 import type { OperatorVisitor } from '../../converters';
 import { RsqlCondition } from '../../types';
 import { QueryParamsOperator } from '../query-params-operator';
@@ -12,7 +12,7 @@ export class BetweenOperator extends QueryParamsOperator {
   value() {
     const [gte, lte] = this.getRawValue().split(',');
 
-    return [parseRsqlDate(gte), parseRsqlDate(lte)];
+    return [parseRsqlValue(gte), parseRsqlValue(lte)];
   }
 
   query(): Nullable<RsqlCondition> {
