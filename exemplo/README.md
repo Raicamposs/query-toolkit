@@ -20,7 +20,7 @@ Servidor HTTP construído com **Fastify + Prisma + PostgreSQL (Docker)** que dem
 | PostgreSQL | 16 | Banco de dados via Docker Compose |
 | TypeScript | 5 (strict) | Linguagem |
 | node-pg | 8 | Cliente PostgreSQL nativo |
-| @raicampos/uery-toolkit | 1.0.0 | Biblioteca principal |
+| @raicampos/query-toolkit | 1.0.0 | Biblioteca principal |
 
 ---
 
@@ -176,7 +176,7 @@ Cria um novo café. Body validado com Zod.
 
 ### `GET /decode`
 
-Rota utilitária para fins de diagnóstico técnico da biblioteca. Ela recebe parâmetros de consulta dinâmicos e exibe em tempo real a estrutura de operadores lógicos do core do `@raicampos/uery-toolkit` via `QueryParamsParse`.
+Rota utilitária para fins de diagnóstico técnico da biblioteca. Ela recebe parâmetros de consulta dinâmicos e exibe em tempo real a estrutura de operadores lógicos do core do `@raicampos/query-toolkit` via `QueryParamsParse`.
 
 **Query Params:**
 Aceita propriedades dinâmicas chave-valor estruturadas de busca ou RSQL (ex: `origin===Brazil&price=btw=20,60`).
@@ -342,7 +342,7 @@ Esta interface permite testar em tempo real:
 
 ```typescript
 // src/pipes/rsql.pipe.ts
-import { RsqlStringParser, QueryParamsParse } from '@raicampos/uery-toolkit/rsql-parse';
+import { RsqlStringParser, QueryParamsParse } from '@raicampos/query-toolkit/rsql-parse';
 
 const rawParams = new RsqlStringParser("roast==DARK;price=lte=50").parse();
 // { roast: "==DARK", price: "=lte=50" }
@@ -354,7 +354,7 @@ const operators = new QueryParamsParse(rawParams).build();
 ### 2. `QueryParamsPrismaConverter` & `QueryParamsSqlConverter`
 
 ```typescript
-import { QueryParamsPrismaConverter, QueryParamsSqlConverter } from '@raicampos/uery-toolkit/converters';
+import { QueryParamsPrismaConverter, QueryParamsSqlConverter } from '@raicampos/query-toolkit/converters';
 
 // Para o Prisma: gera o objeto where aninhado dinâmico
 const prismaWhere = new QueryParamsPrismaConverter(operators).build();
@@ -367,7 +367,7 @@ const sqlClauses = new QueryParamsSqlConverter(operators).build();
 
 ```typescript
 // src/coffee/repositories/coffee-pg.repository.ts
-import { SqlBuilder, QueryParamsSqlConverter } from '@raicampos/uery-toolkit';
+import { SqlBuilder, QueryParamsSqlConverter } from '@raicampos/query-toolkitt';
 
 // 1. Gera e junta todas as cláusulas lógicas em uma lista única
 const converter = new QueryParamsSqlConverter(filters);
@@ -388,7 +388,7 @@ const { sql, params } = builder.build();
 
 ```typescript
 // src/coffee/repositories/coffee-mapper.ts
-import { MapperBuilder } from '@raicampos/uery-toolkit/mappers';
+import { MapperBuilder } from '@raicampos/query-toolkit/mappers';
 
 export const coffeeMapping = {
   id: 'id',
@@ -414,7 +414,7 @@ const domainCoffee = mapper.modelToEntity(prismaCoffee);
 ## 🔗 Links
 
 - 📦 **Repositório da biblioteca:** [github.com/raicampos/uery-toolkit](https://github.com/rraicampos/ery-toolkit)
-- 📖 **npm package:** [@raicampos/uery-toolkit](https://www.npmjs.com/package/@rraicampos/ery-toolkit)
+- 📖 **npm package:** [@raicampos/query-toolkit](https://www.npmjs.com/package/@rraicampos/ery-toolkit)
 
 ---
 

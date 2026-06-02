@@ -12,6 +12,7 @@ exemplo/
 *.spec.ts
 vitest.config.ts
 tsconfig.json
+eslint.config.mjs
 .prettierrc
 .prettierignore
 .gitattributes

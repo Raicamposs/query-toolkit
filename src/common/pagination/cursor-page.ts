@@ -7,7 +7,12 @@ export class CursorPage {
   readonly prevCursor?: string;
   readonly nextCursor?: string;
 
-  constructor(limit = DEFAULT_PAGE_LIMIT, cursor?: string, prevCursor?: string, nextCursor?: string) {
+  constructor(
+    limit = DEFAULT_PAGE_LIMIT,
+    cursor?: string,
+    prevCursor?: string,
+    nextCursor?: string
+  ) {
     const parsedLimit = limit !== undefined && limit > 0 ? limit : DEFAULT_PAGE_LIMIT;
     this._limit = Math.min(parsedLimit, MAX_PAGE_LIMIT);
     this.cursor = cursor;
@@ -81,10 +86,7 @@ export class CursorPage {
           nextValues[key] = lastRow[key];
         }
 
-        nextCursor = CursorPage.encodeNext(
-          nextValues,
-          baseOrderBy
-        );
+        nextCursor = CursorPage.encodeNext(nextValues, baseOrderBy);
       }
 
       if (hasPrev) {
@@ -94,10 +96,7 @@ export class CursorPage {
           prevValues[key] = firstRow[key];
         }
 
-        prevCursor = CursorPage.encodePrev(
-          prevValues,
-          baseOrderBy
-        );
+        prevCursor = CursorPage.encodePrev(prevValues, baseOrderBy);
       }
     }
 

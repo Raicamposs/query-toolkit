@@ -29,7 +29,7 @@
     "@fastify/swagger-ui": "^5.2.6",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
-    "@raicampos/uery-toolkit": "file:..",
+    "@raicampos/query-toolkit": "file:..",
     "@raicampos/oolkit": "^1.0.8",
     "pg": "^8.11.5",
     "qs": "^6.15.2",

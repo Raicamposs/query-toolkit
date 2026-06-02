@@ -61,7 +61,7 @@ O `QueryParamsParse<T>` processa o dicionário gerado pelo parser sintático, va
 Ele aceita um parâmetro de validação opcional (`shape`) para restringir e filtrar as chaves que podem ser consultadas, garantindo segurança na exposição de dados.
 
 ```typescript
-import { QueryParamsParse } from '@raicampos/uery-toolkit';
+import { QueryParamsParse } from '@raicampos/query-toolkit';
 
 interface UserFilter {
   status: string;
@@ -106,7 +106,7 @@ Para adicionar um novo operador (por exemplo, um operador que realiza busca fon�
 2. Registrar o símbolo e o resolvedor no `OperatorRegistry`.
 
 ```typescript
-import { QueryParamsOperator, OperatorRegistry } from '@raicampos/uery-toolkit';
+import { QueryParamsOperator, OperatorRegistry } from '@raicampos/query-toolkitt';
 
 // 1. Definição do novo operador de domínio
 export class SoundsLikeOperator extends QueryParamsOperator {

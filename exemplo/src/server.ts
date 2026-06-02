@@ -65,7 +65,7 @@ async function buildServer(): Promise<void> {
   try {
     const address = await app.listen({ port, host });
     app.log.info(`🚀 Servidor iniciado em ${address}`);
-    app.log.info('📚 Showcase da biblioteca @raicampos/uery-toolkit');
+    app.log.info('📚 Showcase da biblioteca @raicampos/query-toolkit');
   } catch (error) {
     app.log.error(error);
     process.exit(1);

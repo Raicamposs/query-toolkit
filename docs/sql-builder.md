@@ -30,7 +30,7 @@ const { sql, params } = builder.build();
 O `SqlBuilder` disponibiliza diversos métodos utilitários que facilitam a criação de cláusulas sem instanciar classes manualmente:
 
 ```typescript
-import { SqlBuilder } from '@raicampos/uery-toolkit';
+import { SqlBuilder } from '@raicampos/query-toolkit';
 
 const query = new SqlBuilder('SELECT id, name FROM employees')
   .whereEquals('department', 'Engineering')

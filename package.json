@@ -1,6 +1,6 @@
 {
   "name": "@raicampos/query-toolkit",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Pacote de ferramentas para queries. RSQL, filtros, paginação e ordenação.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,12 +25,27 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\""
   },
-  "keywords": [],
-  "author": "Raiane Campos <raianejanu@hotmail.com>",
+  "keywords": [
+    "query",
+    "rsql",
+    "filter",
+    "pagination",
+    "sort",
+    "sql",
+    "builder"
+  ],
+  "author": "Raí Campos <rai.campos@example.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/raicampos/query-toolkit.git"
+    "url": "git+https://github.com/Raicamposs/query-toolkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Raicamposs/query-toolkit/issues"
+  },
+  "homepage": "https://github.com/Raicamposs/query-toolkit#readme",
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",
@@ -44,10 +59,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.54.0",
     "vitest": "^3.2.4"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "@raicampos/toolkit": "^1.1.1",
