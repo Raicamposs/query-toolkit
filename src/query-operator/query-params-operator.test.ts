@@ -19,7 +19,7 @@ class MockOperator extends QueryParamsOperator<RsqlCondition, string> {
   }
 
   accept<T>(visitor: OperatorVisitor<T>, field: string): T {
-    return 'mock-visited' as unknown as T;
+    return 'mock-visited' as T;
   }
 
   public testGetRawValue(): string {

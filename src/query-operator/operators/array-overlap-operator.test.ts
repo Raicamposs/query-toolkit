@@ -17,7 +17,7 @@ describe('ArrayOverlapOperator', () => {
     const operator = new ArrayOverlapOperator('&&v1');
     const visitor = {
       visitArrayOverlap: vi.fn().mockReturnValue('array-overlap-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'tags');
     expect(visitor.visitArrayOverlap).toHaveBeenCalledWith(operator, 'tags');

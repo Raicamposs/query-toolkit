@@ -41,15 +41,25 @@ export class CoffeeController {
       }
 
       const queryParams = new QueryParamsParse<Coffee>(query, {
-        id: 'number',
+        id: {
+          type: 'number',
+          validate: (value: number) => value > 0 || 'O ID para filtro deve ser maior que zero',
+        },
         name: 'string',
         origin: 'string',
-        price: 'number',
+        price: {
+          type: 'number',
+          validate: [
+            (value: number) => value >= 0 || 'O preço para filtro não pode ser negativo',
+            (value: number) => value <= 10000 || 'O preço para filtro excede o limite permitido (10000)',
+          ],
+        },
         roast: 'string',
         flavor: 'string',
         available: 'boolean',
-        tags: 'string'
+        tags: 'string',
       });
+
       const validationResult = queryParams.validate();
       if (!validationResult.success) {
         return reply.status(400).send({

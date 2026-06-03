@@ -26,7 +26,7 @@ describe('BetweenOperator', () => {
     const operator = new BetweenOperator('btw=1,10');
     const visitor = {
       visitBetween: vi.fn().mockReturnValue('visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'field');
     expect(visitor.visitBetween).toHaveBeenCalledWith(operator, 'field');

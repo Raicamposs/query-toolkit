@@ -97,6 +97,30 @@ describe('Coffee Routes Integration Tests (Fastify + In-Memory Repository)', () 
       expect(body.error).toBe('Validation Error');
       expect(body.details[0].message).toContain('Sort must follow pattern');
     });
+
+    it('should return 400 when custom query parameter validation fails', async () => {
+      const app = buildApp();
+
+      // Testando preço negativo
+      const responsePrice = await app.inject({
+        method: 'GET',
+        url: '/coffees?price=lt=-10',
+      });
+      expect(responsePrice.statusCode).toBe(400);
+      const bodyPrice = JSON.parse(responsePrice.body);
+      expect(bodyPrice.error).toBe('Validation Error');
+      expect(bodyPrice.details).toContain("Field 'price': O preço para filtro não pode ser negativo");
+
+      // Testando ID menor ou igual a zero
+      const responseId = await app.inject({
+        method: 'GET',
+        url: '/coffees?id=lte=0',
+      });
+      expect(responseId.statusCode).toBe(400);
+      const bodyId = JSON.parse(responseId.body);
+      expect(bodyId.error).toBe('Validation Error');
+      expect(bodyId.details).toContain("Field 'id': O ID para filtro deve ser maior que zero");
+    });
   });
 
   describe('GET /coffees/:id', () => {

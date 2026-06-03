@@ -25,7 +25,9 @@ export class NotInOperator extends QueryParamsOperator<
   }
 
   value(): PrimitiveValueType[] {
-    return this.stateValues.map(v => v.getValue()).filter((v): v is PrimitiveValueType => v !== null && v !== undefined);
+    return this.stateValues
+      .map((v) => v.getValue())
+      .filter((v): v is PrimitiveValueType => v !== null && v !== undefined);
   }
 
   query(): NotInCondition<PrimitiveValueType> {

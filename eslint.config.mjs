@@ -6,8 +6,14 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json', './tsconfig.test.json'],
+      },
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -26,6 +32,14 @@ export default tseslint.config(
       'no-var': 'error',
       'no-useless-escape': 'off',
       'no-prototype-builtins': 'off',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSAsExpression > TSAsExpression > TSUnknownKeyword',
+          message:
+            'Double assertion "as unknown as T" é proibido. Corrija o tipo na origem ou use um type guard.',
+        },
+      ],
     },
   },
   {
@@ -34,9 +48,19 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', 'coverage/**', '*.config.js', '*.config.mjs', '.agent/**', 'exemplo/dist/**', 'exemplo/prisma/generated/**'],
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'coverage/**',
+      '*.config.js',
+      '*.config.mjs',
+      '*.config.ts',
+      '.agent/**',
+      'exemplo/**',
+    ],
   }
 );

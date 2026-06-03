@@ -23,7 +23,7 @@ describe('InOperator', () => {
     const operator = new InOperator('("v1")');
     const visitor = {
       visitIn: vi.fn().mockReturnValue('in-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'status');
     expect(visitor.visitIn).toHaveBeenCalledWith(operator, 'status');

@@ -23,7 +23,7 @@ describe('NotInOperator', () => {
     const operator = new NotInOperator('("v1")');
     const visitor = {
       visitNotIn: vi.fn().mockReturnValue('not-in-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'status');
     expect(visitor.visitNotIn).toHaveBeenCalledWith(operator, 'status');

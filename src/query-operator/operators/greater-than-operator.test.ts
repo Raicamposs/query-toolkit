@@ -30,7 +30,7 @@ describe('GreaterThanOperator', () => {
     const operator = new GreaterThanOperator('gt=10');
     const visitor = {
       visitGreaterThan: vi.fn().mockReturnValue('gt-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'age');
     expect(visitor.visitGreaterThan).toHaveBeenCalledWith(operator, 'age');

@@ -160,9 +160,11 @@ describe('CursorPage', () => {
       expect(result.nextCursor).toBeDefined();
       expect(result.prevCursor).toBeUndefined();
 
-      const decoded = CursorCodec.decode(result.nextCursor!);
-      expect(decoded?.direction).toBe('next');
-      expect(decoded?.values.id).toBe(2);
+      if (result.nextCursor) {
+        const decoded = CursorCodec.decode(result.nextCursor);
+        expect(decoded?.direction).toBe('next');
+        expect(decoded?.values.id).toBe(2);
+      }
     });
 
     it('should generate prevCursor when hasPrev is true (hasCurrentCursor=true, direction next)', () => {
@@ -175,9 +177,11 @@ describe('CursorPage', () => {
       expect(result.hasPrev).toBe(true);
       expect(result.prevCursor).toBeDefined();
 
-      const decoded = CursorCodec.decode(result.prevCursor!);
-      expect(decoded?.direction).toBe('prev');
-      expect(decoded?.values.id).toBe(1);
+      if (result.prevCursor) {
+        const decoded = CursorCodec.decode(result.prevCursor);
+        expect(decoded?.direction).toBe('prev');
+        expect(decoded?.values.id).toBe(1);
+      }
     });
 
     it('should not generate cursors when data is empty', () => {
@@ -197,9 +201,11 @@ describe('CursorPage', () => {
       const result = CursorPage.processResult(rows, 2, 'next', { name: 'asc' }, false, 'id');
 
       expect(result.nextCursor).toBeDefined();
-      const decoded = CursorCodec.decode(result.nextCursor!);
-      expect(decoded?.orderBy).toHaveProperty('id');
-      expect(decoded?.orderBy).toHaveProperty('name');
+      if (result.nextCursor) {
+        const decoded = CursorCodec.decode(result.nextCursor);
+        expect(decoded?.orderBy).toHaveProperty('id');
+        expect(decoded?.orderBy).toHaveProperty('name');
+      }
     });
   });
 

@@ -17,7 +17,7 @@ describe('NotContainsOperator', () => {
     const operator = new NotContainsOperator('!~=coffee');
     const visitor = {
       visitNotContains: vi.fn().mockReturnValue('not-contains-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'name');
     expect(visitor.visitNotContains).toHaveBeenCalledWith(operator, 'name');

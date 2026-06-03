@@ -20,7 +20,7 @@ class GeoDistanceOperator extends QueryParamsOperator<RsqlCondition, number> {
   }
 
   query(): Nullable<RsqlCondition> {
-    return { equals: this.value() } as unknown as RsqlCondition;
+    return { equals: this.value() } as RsqlCondition;
   }
 
   accept<T>(visitor: OperatorVisitor<T>, field: string): T {

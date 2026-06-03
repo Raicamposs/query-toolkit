@@ -17,7 +17,7 @@ describe('ContainsOperator', () => {
     const operator = new ContainsOperator('~=coffee');
     const visitor = {
       visitContains: vi.fn().mockReturnValue('contains-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'name');
     expect(visitor.visitContains).toHaveBeenCalledWith(operator, 'name');

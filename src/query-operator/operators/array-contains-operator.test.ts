@@ -17,7 +17,7 @@ describe('ArrayContainsOperator', () => {
     const operator = new ArrayContainsOperator('@>v1');
     const visitor = {
       visitArrayContains: vi.fn().mockReturnValue('array-contains-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'tags');
     expect(visitor.visitArrayContains).toHaveBeenCalledWith(operator, 'tags');

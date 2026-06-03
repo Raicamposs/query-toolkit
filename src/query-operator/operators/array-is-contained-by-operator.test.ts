@@ -17,7 +17,7 @@ describe('ArrayIsContainedByOperator', () => {
     const operator = new ArrayIsContainedByOperator('<@v1');
     const visitor = {
       visitArrayIsContainedBy: vi.fn().mockReturnValue('array-is-contained-by-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'tags');
     expect(visitor.visitArrayIsContainedBy).toHaveBeenCalledWith(operator, 'tags');

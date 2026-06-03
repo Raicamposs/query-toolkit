@@ -22,7 +22,7 @@ describe('UnknownOperator', () => {
     const operator = new UnknownOperator('value');
     const visitor = {
       visitUnknown: vi.fn().mockReturnValue('visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'field');
     expect(visitor.visitUnknown).toHaveBeenCalledWith(operator, 'field');

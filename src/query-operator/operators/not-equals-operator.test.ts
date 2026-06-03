@@ -29,7 +29,7 @@ describe('NotEqualsOperator', () => {
     const operator = new NotEqualsOperator('!=value');
     const visitor = {
       visitNotEquals: vi.fn().mockReturnValue('not-equals-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'name');
     expect(visitor.visitNotEquals).toHaveBeenCalledWith(operator, 'name');

@@ -80,7 +80,7 @@ export class CursorPage {
       }
 
       if (hasNext) {
-        const lastRow = rows[rows.length - 1] as unknown as Record<string, unknown>;
+        const lastRow = rows[rows.length - 1] as Record<string, unknown>;
         const nextValues: Record<string, unknown> = {};
         for (const key of Object.keys(baseOrderBy)) {
           nextValues[key] = lastRow[key];
@@ -90,7 +90,7 @@ export class CursorPage {
       }
 
       if (hasPrev) {
-        const firstRow = rows[0] as unknown as Record<string, unknown>;
+        const firstRow = rows[0] as Record<string, unknown>;
         const prevValues: Record<string, unknown> = {};
         for (const key of Object.keys(baseOrderBy)) {
           prevValues[key] = firstRow[key];

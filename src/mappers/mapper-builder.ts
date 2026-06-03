@@ -220,7 +220,7 @@ export class MapperBuilder<Table extends object, Entity extends object> {
    */
   public entityToModel(entity: Partial<Entity>): Table {
     if (isNullOrUndefined(entity)) {
-      return entity as unknown as Table;
+      return entity;
     }
 
     const model = {} as Table;
@@ -268,7 +268,7 @@ export class MapperBuilder<Table extends object, Entity extends object> {
    */
   public modelToEntity(model: Partial<Table>): Entity {
     if (isNullOrUndefined(model)) {
-      return model as unknown as Entity;
+      return model;
     }
 
     const entity = {} as Entity;

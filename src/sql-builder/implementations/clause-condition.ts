@@ -1,7 +1,7 @@
 import { isNullOrUndefined, Nullable } from '@raicampos/toolkit';
+import { PrimitiveValueType } from '../../common/types/primitive-value';
 import { Clause } from '../core/clause';
 import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
 import { SqlPrimitiveValue } from '../core/sql-primitive-value';
 import { TransformFunction } from '../core/transform-function';
 
@@ -47,10 +47,7 @@ export class ClauseCondition extends Clause {
 
     // Date is an object, so we must check it before the general object check
     if (this.condition instanceof Date || typeof this.condition !== 'object') {
-      const value = new SqlPrimitiveValue(
-        this.condition as unknown as PrimitiveValueType,
-        this.transformFunction
-      ).toValue();
+      const value = new SqlPrimitiveValue(this.condition, this.transformFunction).toValue();
       return this.transformParameterized('equals', value, paramIndex);
     }
 
@@ -93,13 +90,13 @@ export class ClauseCondition extends Clause {
       case 'equals':
         return {
           sql: `${this.field} = $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
 
       case 'notEquals':
         return {
           sql: `${this.field} <> $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
 
       case 'notContains':
@@ -119,7 +116,7 @@ export class ClauseCondition extends Clause {
         const placeholders = value.map((_, i) => `$${paramIndex + i}`).join(', ');
         return {
           sql: `${this.field} in (${placeholders})`,
-          params: value as unknown as Nullable<PrimitiveValueType>[],
+          params: value,
         };
       }
 
@@ -128,38 +125,38 @@ export class ClauseCondition extends Clause {
         const placeholders = value.map((_, i) => `$${paramIndex + i}`).join(', ');
         return {
           sql: `not ${this.field} in (${placeholders})`,
-          params: value as unknown as Nullable<PrimitiveValueType>[],
+          params: value,
         };
       }
 
       case 'gt':
         return {
           sql: `${this.field} > $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
 
       case 'gte':
         return {
           sql: `${this.field} >= $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
 
       case 'lt':
         return {
           sql: `${this.field} < $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
 
       case 'lte':
         return {
           sql: `${this.field} <= $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
 
       case 'arrayContains':
         return this.buildWhereArrayParameterized(
           this.field,
-          value as unknown as Nullable<PrimitiveValueType>[],
+          value as Nullable<PrimitiveValueType>[],
           '@>',
           paramIndex
         );
@@ -167,7 +164,7 @@ export class ClauseCondition extends Clause {
       case 'arrayIsContainedBy':
         return this.buildWhereArrayParameterized(
           this.field,
-          value as unknown as Nullable<PrimitiveValueType>[],
+          value as Nullable<PrimitiveValueType>[],
           '<@',
           paramIndex
         );
@@ -175,7 +172,7 @@ export class ClauseCondition extends Clause {
       case 'arrayOverlap':
         return this.buildWhereArrayParameterized(
           this.field,
-          value as unknown as Nullable<PrimitiveValueType>[],
+          value as Nullable<PrimitiveValueType>[],
           '&&',
           paramIndex
         );
@@ -183,7 +180,7 @@ export class ClauseCondition extends Clause {
       default:
         return {
           sql: `${this.field} = $${paramIndex}`,
-          params: [value as unknown as Nullable<PrimitiveValueType>],
+          params: [value as Nullable<PrimitiveValueType>],
         };
     }
   }

@@ -57,15 +57,15 @@ export function applyCursor<T>(builder: SqlBuilder<T>, params: CursorParams): Cu
         : 'lt';
 
     if (op === 'gt') {
-      builder.whereGreaterThan(primaryKeyName as unknown as QueryableFields<T>, anchorId as number);
+      builder.whereGreaterThan(primaryKeyName as QueryableFields<T>, anchorId as number);
     } else {
-      builder.whereLessThan(primaryKeyName as unknown as QueryableFields<T>, anchorId as number);
+      builder.whereLessThan(primaryKeyName as QueryableFields<T>, anchorId as number);
     }
   }
 
   // ORDER BY
   for (const [field, dir] of Object.entries(effectiveOrderBy)) {
-    builder.addOrder(dir, field as unknown as QueryableFields<T>);
+    builder.addOrder(dir, field as QueryableFields<T>);
   }
 
   // LIMIT N+1 para detectar hasNext/hasPrev

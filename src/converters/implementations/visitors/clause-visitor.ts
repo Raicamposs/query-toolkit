@@ -38,75 +38,101 @@ import type { OperatorVisitor } from '../../core/operator-visitor';
  * Visitor implementation that converts QueryParamsOperator to SQL Clause objects
  */
 export class ClauseVisitor implements OperatorVisitor<Clause> {
+  private assertValue(value: unknown, field: string, operatorName: string): asserts value {
+    if (isNullOrUndefined(value))
+      throw new Error(`Field "${field}": value is required for ${operatorName} operator.`);
+  }
+
   visitEquals(operator: EqualsOperator, field: string): Clause {
-    return new ClauseEquals(field, operator.value()!);
+    const value = operator.value();
+    this.assertValue(value, field, 'Equals');
+    return new ClauseEquals(field, value);
   }
 
   visitNotEquals(operator: NotEqualsOperator, field: string): Clause {
-    return new ClauseNotEquals(field, operator.value()!);
+    const value = operator.value();
+    this.assertValue(value, field, 'NotEquals');
+    return new ClauseNotEquals(field, value);
   }
 
   visitIn(operator: InOperator, field: string): Clause {
-    const value = operator.value()!;
+    const value = operator.value();
     return new ClauseIn(field, Array.isArray(value) ? value : [value]);
   }
 
   visitNotIn(operator: NotInOperator, field: string): Clause {
-    const value = operator.value()!;
+    const value = operator.value();
     const values = Array.isArray(value) ? value : [value];
     return new ClauseNotIn(field, values);
   }
 
   visitGreaterThan(operator: GreaterThanOperator, field: string): Clause {
-    return new ClauseGreaterThan(field, operator.value()!);
+    const value = operator.value();
+    this.assertValue(value, field, 'GreaterThan');
+    return new ClauseGreaterThan(field, value);
   }
 
   visitGreaterThanOrEquals(operator: GreaterThanOrEqualsOperator, field: string): Clause {
-    return new ClauseGreaterThanOrEquals(field, operator.value()!);
+    const value = operator.value();
+    this.assertValue(value, field, 'GreaterThanOrEquals');
+    return new ClauseGreaterThanOrEquals(field, value);
   }
 
   visitLessThan(operator: LessThanOperator, field: string): Clause {
-    return new ClauseLessThan(field, operator.value()!);
+    const value = operator.value();
+    this.assertValue(value, field, 'LessThan');
+    return new ClauseLessThan(field, value);
   }
 
   visitLessThanOrEquals(operator: LessThanOrEqualOperator, field: string): Clause {
-    return new ClauseLessThanOrEquals(field, operator.value()!);
+    const value = operator.value();
+    this.assertValue(value, field, 'LessThanOrEquals');
+    return new ClauseLessThanOrEquals(field, value);
   }
 
   visitContains(operator: ContainsOperator, field: string): Clause {
-    return new ClauseILike(field, `%${operator.value()!}%`);
+    const value = operator.value();
+    this.assertValue(value, field, 'Contains');
+    return new ClauseILike(field, `%${value}%`);
   }
 
   visitNotContains(operator: NotContainsOperator, field: string): Clause {
-    return new ClauseNotILike(field, `%${operator.value()!}%`);
+    const value = operator.value();
+    this.assertValue(value, field, 'NotContains');
+    return new ClauseNotILike(field, `%${value}%`);
   }
 
   visitBetween(operator: BetweenOperator, field: string): Clause {
-    const value = operator.value()!;
+    const value = operator.value();
 
-    if (!value || typeof value !== 'object' || !('gte' in value) || !('lte' in value)) {
+    if (
+      typeof value !== 'object' ||
+      isNullOrUndefined(value) ||
+      !('gte' in value) ||
+      !('lte' in value)
+    ) {
       throw new Error(
         `Invalid value for Between operator on field "${field}". Expected an object with gte and lte.`
       );
     }
 
-    return new ClauseBetween(field, value.gte as number | Date, value.lte as number | Date);
+    return new ClauseBetween(field, value.gte, value.lte);
   }
 
   visitArrayContains(operator: ArrayContainsOperator, field: string): Clause {
-    const value = operator.value()!;
+    const value = operator.value();
     const values = Array.isArray(value) ? value : [value];
     return new ClauseArrayContains(field, values);
   }
 
   visitArrayIsContainedBy(operator: ArrayIsContainedByOperator, field: string): Clause {
-    const value = operator.value()!;
+    const value = operator.value();
     const values = Array.isArray(value) ? value : [value];
     return new ClauseArrayIsContainedBy(field, values);
   }
 
   visitArrayOverlap(operator: ArrayOverlapOperator, field: string): Clause {
-    const value = operator.value()!;
+    const value = operator.value();
     const values = Array.isArray(value) ? value : [value];
     return new ClauseArrayOverlap(field, values);
   }
@@ -118,6 +144,6 @@ export class ClauseVisitor implements OperatorVisitor<Clause> {
       return new ClauseEmpty();
     }
 
-    return new ClauseEquals(field, value!);
+    return new ClauseEquals(field, value);
   }
 }

@@ -24,7 +24,7 @@ describe('LessThanOperator', () => {
     const operator = new LessThanOperator('lt=10');
     const visitor = {
       visitLessThan: vi.fn().mockReturnValue('lt-visited'),
-    } as unknown as OperatorVisitor<string>;
+    } as OperatorVisitor<string>;
 
     const result = operator.accept(visitor, 'age');
     expect(visitor.visitLessThan).toHaveBeenCalledWith(operator, 'age');

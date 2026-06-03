@@ -44,53 +44,38 @@ export function parseRsqlListValue(
     .map((v) => PrimitiveValue.converter(v).getValue());
 }
 
+// Inicialização imediata dos resolvers padrão para evitar lazy loading imperativo
+const DEFAULT_RESOLVERS = new Map<OperatorSymbolType, OperatorResolver>([
+  [OperatorSymbol.equals, (params) => new EqualsOperator(params)],
+  [OperatorSymbol.notEquals, (params) => new NotEqualsOperator(params)],
+  [OperatorSymbol.contains, (params) => new ContainsOperator(params)],
+  [OperatorSymbol.notContains, (params) => new NotContainsOperator(params)],
+  [OperatorSymbol.between, (params) => new BetweenOperator(params)],
+  [OperatorSymbol.greaterThan, (params) => new GreaterThanOperator(params)],
+  [OperatorSymbol.greaterThanOrEqual, (params) => new GreaterThanOrEqualsOperator(params)],
+  [OperatorSymbol.lessThan, (params) => new LessThanOperator(params)],
+  [OperatorSymbol.lessThanOrEqual, (params) => new LessThanOrEqualOperator(params)],
+  [OperatorSymbol.arrayIsContainedBy, (params) => new ArrayIsContainedByOperator(params)],
+  [OperatorSymbol.arrayContains, (params) => new ArrayContainsOperator(params)],
+  [OperatorSymbol.arrayOverlap, (params) => new ArrayOverlapOperator(params)],
+  [OperatorSymbol.in, (params) => new InOperator(params)],
+  [OperatorSymbol.notIn, (params) => new NotInOperator(params)],
+]);
+
+const resolvers = new Map<OperatorSymbolType, OperatorResolver>(DEFAULT_RESOLVERS);
+
 /**
  * Registry dinâmico de operadores RSQL.
  * Facilita a extensibilidade da biblioteca em conformidade com o Open/Closed Principle (OCP).
  */
 export class OperatorRegistry {
-  private static readonly resolvers = new Map<OperatorSymbolType, OperatorResolver>();
-  private static isInitialized = false;
-
-  private static ensureInitialized(): void {
-    if (this.isInitialized) {
-      return;
-    }
-    this.isInitialized = true;
-
-    this.resolvers.set(OperatorSymbol.equals, (params) => new EqualsOperator(params));
-    this.resolvers.set(OperatorSymbol.notEquals, (params) => new NotEqualsOperator(params));
-    this.resolvers.set(OperatorSymbol.contains, (params) => new ContainsOperator(params));
-    this.resolvers.set(OperatorSymbol.notContains, (params) => new NotContainsOperator(params));
-    this.resolvers.set(OperatorSymbol.between, (params) => new BetweenOperator(params));
-    this.resolvers.set(OperatorSymbol.greaterThan, (params) => new GreaterThanOperator(params));
-    this.resolvers.set(
-      OperatorSymbol.greaterThanOrEqual,
-      (params) => new GreaterThanOrEqualsOperator(params)
-    );
-    this.resolvers.set(OperatorSymbol.lessThan, (params) => new LessThanOperator(params));
-    this.resolvers.set(
-      OperatorSymbol.lessThanOrEqual,
-      (params) => new LessThanOrEqualOperator(params)
-    );
-    this.resolvers.set(
-      OperatorSymbol.arrayIsContainedBy,
-      (params) => new ArrayIsContainedByOperator(params)
-    );
-    this.resolvers.set(OperatorSymbol.arrayContains, (params) => new ArrayContainsOperator(params));
-    this.resolvers.set(OperatorSymbol.arrayOverlap, (params) => new ArrayOverlapOperator(params));
-    this.resolvers.set(OperatorSymbol.in, (params) => new InOperator(params));
-    this.resolvers.set(OperatorSymbol.notIn, (params) => new NotInOperator(params));
-  }
-
   /**
    * Registra um novo operador na biblioteca associado a um símbolo específico.
    * @param symbol Símbolo RSQL do operador (ex: "==", "gt=").
    * @param resolver Função criadora (factory function) do operador correspondente.
    */
   static register(symbol: OperatorSymbolType, resolver: OperatorResolver): void {
-    this.ensureInitialized();
-    this.resolvers.set(symbol, resolver);
+    resolvers.set(symbol, resolver);
   }
 
   /**
@@ -98,13 +83,15 @@ export class OperatorRegistry {
    * @param params String RSQL completa (ex: "==Brazil", "gt=50").
    */
   static resolve(params: string): QueryParamsOperator<unknown, unknown> {
-    this.ensureInitialized();
     let bestSymbol = '';
     let bestResolver: OperatorResolver | null = null;
 
     // Busca pela correspondência mais longa para evitar colisões de prefixos parecidos (ex: ">" vs ">=")
-    for (const [symbol, resolver] of this.resolvers.entries()) {
-      if (params.startsWith(symbol) && symbol.length > bestSymbol.length) {
+    for (const [symbol, resolver] of resolvers.entries()) {
+      const isMatch = params.startsWith(symbol);
+      const isLongerMatch = symbol.length > bestSymbol.length;
+
+      if (isMatch && isLongerMatch) {
         bestSymbol = symbol;
         bestResolver = resolver;
       }
@@ -121,7 +108,16 @@ export class OperatorRegistry {
    * Reseta o Registry removendo todos os operadores registrados.
    */
   static clear(): void {
-    this.ensureInitialized();
-    this.resolvers.clear();
+    resolvers.clear();
+  }
+
+  /**
+   * Restaura os resolvers padrão do Registry.
+   */
+  static resetToDefault(): void {
+    resolvers.clear();
+    for (const [symbol, resolver] of DEFAULT_RESOLVERS.entries()) {
+      resolvers.set(symbol, resolver);
+    }
   }
 }

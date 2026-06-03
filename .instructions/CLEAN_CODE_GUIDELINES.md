@@ -40,6 +40,7 @@ Tratamento rigoroso de null vs undefined na geração das queries.
 
 ❌ Proibido criar dependências circulares entre o Builder e o Compiler.
 
-❌ Proibido usar any no TypeScript; defina interfaces claras para as cláusulas.
+❌ Proibido usar type casts forçados ou evasivos (ex: `as  Type`), pois isso mascara bugs e quebra o contrato das classes. Exija sempre tipagem estrita e correta.
 
-❌ Proibido usar type casts forçados ou evasivos (ex: `as unknown as Type`), pois isso mascara bugs e quebra o contrato das classes. Exija sempre tipagem estrita e correta.
+🌐 Idioma e Documentação
+- Idioma Oficial: Toda a documentação do projeto (incluindo comentários de código, JSDoc/TSDoc, README e outros arquivos Markdown) e todas as descrições de suítes e casos de teste (blocos `describe` e `it`/`test`) devem ser escritas obrigatoriamente em Português do Brasil.
