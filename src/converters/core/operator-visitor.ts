@@ -8,15 +8,17 @@ import type { GreaterThanOperator } from '../../query-operator/operators/greater
 import type { GreaterThanOrEqualsOperator } from '../../query-operator/operators/greater-than-or-equals-operator';
 import type { InOperator } from '../../query-operator/operators/in-operator';
 import type { LessThanOperator } from '../../query-operator/operators/less-than-operator';
-import type { LessThanOrEqualOperator } from '../../query-operator/operators/less-than-or-equals-operator';
+import type { LessThanOrEqualsOperator } from '../../query-operator/operators/less-than-or-equals-operator';
 import type { NotContainsOperator } from '../../query-operator/operators/not-contains-operator';
 import type { NotEqualsOperator } from '../../query-operator/operators/not-equals-operator';
 import type { NotInOperator } from '../../query-operator/operators/not-in-operator';
 import type { UnknownOperator } from '../../query-operator/operators/unknown-operator';
+import type { QueryParamsOperator } from '../../query-operator/query-params-operator';
 
 /**
- * Visitor interface for converting QueryParamsOperator to different formats
- * @template T - The return type of the visitor methods
+ * Interface Visitor para conversão de QueryParamsOperator em diferentes formatos.
+ * Implemente via BaseOperatorVisitor para obter suporte a visitCustom sem custo adicional.
+ * @template T - Tipo de retorno dos métodos do visitor
  */
 export interface OperatorVisitor<T> {
   visitEquals(operator: EqualsOperator, field: string): T;
@@ -26,7 +28,7 @@ export interface OperatorVisitor<T> {
   visitGreaterThan(operator: GreaterThanOperator, field: string): T;
   visitGreaterThanOrEquals(operator: GreaterThanOrEqualsOperator, field: string): T;
   visitLessThan(operator: LessThanOperator, field: string): T;
-  visitLessThanOrEquals(operator: LessThanOrEqualOperator, field: string): T;
+  visitLessThanOrEquals(operator: LessThanOrEqualsOperator, field: string): T;
   visitContains(operator: ContainsOperator, field: string): T;
   visitNotContains(operator: NotContainsOperator, field: string): T;
   visitBetween(operator: BetweenOperator, field: string): T;
@@ -34,4 +36,10 @@ export interface OperatorVisitor<T> {
   visitArrayIsContainedBy(operator: ArrayIsContainedByOperator, field: string): T;
   visitArrayOverlap(operator: ArrayOverlapOperator, field: string): T;
   visitUnknown(operator: UnknownOperator, field: string): T;
+  /**
+   * Chamado por operadores registrados via OperatorRegistry.register() que estendem
+   * CustomQueryParamsOperator. Sobrescreva via BaseOperatorVisitor.registerHandler().
+   * Opcional para que mocks parciais de visitor em testes continuem válidos.
+   */
+  visitCustom?(operator: QueryParamsOperator<unknown, unknown>, field: string): T;
 }

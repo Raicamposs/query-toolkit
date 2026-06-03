@@ -1,63 +1,61 @@
 # @raicampos/query-toolkit
 
-A powerful TypeScript toolkit for building database queries. It provides tools for RSQL parsing, SQL building, and data mapping.
+Toolkit TypeScript para construção de queries de banco de dados. Fornece ferramentas para parsing RSQL, construção SQL e mapeamento de dados.
 
-## Features
+## Funcionalidades
 
-- **RSQL Parsing**: Convert query strings like `name===John&age=gte=18` into structured operator objects.
-- **SQL Builder**: A fluent API for building SQL queries with automatic column mapping and validation.
-- **Data Mappers**: Easily map between database entities and domain models.
-- **Flexible Operators**: Support for comparison, logical, and array operators.
-- **Type Safety**: Built with TypeScript for robust validation and IDE support.
+- **Parsing RSQL**: Converte query strings como `name==John;age=gte=18` em objetos de operadores tipados.
+- **SQL Builder**: API fluente para construção de queries SQL com mapeamento automático de colunas e validação.
+- **Mapeadores de Dados**: Mapeamento bidirecional entre entidades de banco de dados e modelos de domínio.
+- **Operadores Flexíveis**: Suporte a operadores de comparação, lógicos e de array.
+- **Segurança de Tipos**: Construído com TypeScript para validação robusta e suporte a IDEs.
 
-## Installation
+## Instalação
 
 ```bash
 npm install @raicampos/query-toolkit
 ```
 
-## 🛡️ Parameterized Queries (Recommended)
+## 🛡️ Queries Parametrizadas (Recomendado)
 
-`@raicampos/query-toolkit` supports parameterized queries, which are crucial for preventing SQL injection.
+O `@raicampos/query-toolkit` suporta queries parametrizadas, fundamentais para prevenir SQL Injection.
 
 ```typescript
 import { SqlBuilder, ClauseEquals, ClauseGreaterThan } from '@raicampos/query-toolkit';
 
-const builder = new SqlBuilder('users');
-builder.add(new ClauseEquals('status', 'active'));
-builder.add(new ClauseGreaterThan('age', 18));
+const builder = SqlBuilder.from('users');
+builder.whereEquals('status', 'active');
+builder.whereGreaterThan('age', 18);
 
-// Returns { sql: "SELECT * FROM users WHERE status = $1 AND age > $2", params: ['active', 18] }
+// Retorna { sql: "SELECT * FROM users WHERE (status = $1) AND (age > $2)", params: ['active', 18] }
 const { sql, params } = builder.build();
 
-// Use with your database driver (e.g., pg)
-// await db.query(sql, params);
+// Use com o driver do seu banco (ex: pg)
+await db.query(sql, params);
 ```
 
-## Core Components
+## Componentes Principais
 
 ### 1. SQL Builder
 
-Build complex SQL queries with a fluent interface.
+Construção de queries SQL complexas com interface fluente.
 
 ```typescript
 import { SqlBuilder } from '@raicampos/query-toolkit';
 
-const builder = new SqlBuilder('SELECT * FROM users');
-
-builder
+const { sql, params } = SqlBuilder.from('users')
   .whereEquals('status', 'active')
   .whereGreaterThan('age', 18)
   .addOrder('desc', 'created_at')
-  .addLimit(10);
-
-const sql = builder.build();
-// SELECT * FROM users WHERE (status = 'active') AND (age > 18) ORDER BY created_at DESC LIMIT 10
+  .addLimit(10)
+  .build();
+// sql:    "SELECT * FROM users WHERE (status = $1) AND (age > $2) ORDER BY created_at DESC LIMIT 10"
+// params: ['active', 18]
 ```
 
-### 2. RSQL Parsing
+### 2. Parsing RSQL
 
-Parse RSQL parameters from URL query strings.
+Parse de parâmetros RSQL oriundos de query strings da URL.
 
 ```typescript
 import { QueryParamsParse } from '@raicampos/query-toolkit';
@@ -65,163 +63,212 @@ import { QueryParamsParse } from '@raicampos/query-toolkit';
 const params = {
   name: '==John',
   age: 'gte=18',
-  status: 'in=ACTIVE,PENDING'
+  status: 'in=ACTIVE,PENDING',
 };
 
-const parser = new QueryParamsParse(params);
-const operators = parser.build(); // Record<string, QueryParamsOperator[]>
+const { operators } = new QueryParamsParse(params);
+// Record<string, QueryParamsOperator[]>
 ```
 
 ### 3. Mapper Builder
 
-Map your database entities to clean domain models.
+Mapeamento entre entidades de banco de dados e modelos de domínio limpos.
 
 ```typescript
 import { MapperBuilder } from '@raicampos/query-toolkit';
 
-const userMapper = {
+const mapeamento = {
   id: 'user_id',
   email: 'user_email',
-  name: 'full_name'
+  nome: 'full_name',
 };
 
-const builder = new MapperBuilder(userMapper);
-const model = builder.entityToModel({
+const mapper = new MapperBuilder(mapeamento);
+const modelo = mapper.entityToModel({
   user_id: 1,
-  user_email: 'john@example.com',
-  full_name: 'John Doe'
+  user_email: 'joao@exemplo.com',
+  full_name: 'João Silva',
 });
+// { id: 1, email: 'joao@exemplo.com', nome: 'João Silva' }
 ```
 
-### 4. Converters (Visitors)
+### 4. Conversores (Visitors)
 
-Convert query parameter operators into target formats (like Prisma Where query object or SQL query Clauses) using specialized, type-safe converters that leverage the Visitor pattern under the hood.
+Convertem operadores de query params em formatos específicos (objeto `where` do Prisma ou cláusulas SQL) usando o padrão Visitor com segurança de tipos completa.
 
 ```typescript
-import { QueryParamsParse, QueryParamsPrismaConverter, QueryParamsSqlConverter } from '@raicampos/query-toolkit';
+import { QueryParamsParse, QueryParamsPrismaConverter, QueryParamsSqlConverter, QueryParamsSqlStringConverter } from '@raicampos/query-toolkit';
 
-const params = {
-  status: '==active',
-  age: 'gt=18'
-};
+const params = { status: '==active', age: 'gt=18' };
+const { operators } = new QueryParamsParse(params);
 
-const operators = new QueryParamsParse(params).build();
+// 1. Converte para objeto where do Prisma (funde condições de campos automaticamente)
+const where = new QueryParamsPrismaConverter(operators).build();
+// { status: 'active', age: { gt: 18 } }
 
-// 1. Convert to a Prisma Where query object (merges field conditions automatically)
-const prismaConverter = new QueryParamsPrismaConverter(operators);
-const prismaWhere = prismaConverter.build();
-// Returns: { status: { equals: 'active' }, age: { gt: 18 } }
+// 2. Converte para Cláusulas do SqlBuilder (queries parametrizadas)
+const clauses = new QueryParamsSqlConverter(operators).build();
+// Record<string, Clause[]>
 
-// 2. Convert to SQL Builder Clauses (for database agnostic SQL building)
-const sqlConverter = new QueryParamsSqlConverter(operators);
-const clauses = sqlConverter.build(); // Record<string, Clause[]>
+// 3. Converte para string SQL direta
+const converter = new QueryParamsSqlStringConverter(operators);
+const whereStr = converter.build();       // "status = 'active' AND age > 18"
+const { where: w, orderBy } = converter.buildQuery({ age: 'desc' });
 ```
 
-### 5. Pagination (Classic & Cursor)
+### 5. Paginação (Clássica e por Cursor)
 
-Robust and dynamic pagination using both **Classic** (offset/limit) and **Cursor-based** (bidirectional, minified base64) strategies.
+Paginação robusta e dinâmica com estratégias **Clássica** (offset/limit) e **por Cursor** (bidirecional, base64 minificado).
 
 ```typescript
 import { CursorPage, ClassicPage } from '@raicampos/query-toolkit';
 
-// A. Cursor Pagination (Highly performant for infinite scrolls & large datasets)
-// The library natively decodes, encodes, and minimizes the cursors strictly to the requested columns.
-const cursorPagination = new CursorPage(20, 'eyJ2Ijp7ImlkIjoyfSwiZCI6MSwibyI6eyJpZCI6MX19');
+// A. Paginação por Cursor (alto desempenho para scroll infinito e grandes datasets)
+const paginacaoCursor = new CursorPage(20, 'eyJ2Ijp7ImlkIjoyfSwiZCI6MSwibyI6eyJpZCI6MX19');
 
-// ... Pass the pagination object down to the repository
-const { data, hasNext, hasPrev, nextCursor, prevCursor } = CursorPage.processResult(
-  rawData, 
-  cursorPagination.limit, 
-  cursorDirection, 
-  orderBy, // base properties for sorting (e.g. { price: 'asc' })
-  hasCurrentCursor,
-  'id' // Configurable primaryKey (tie-breaker)
-);
-
-// B. Classic Pagination (Traditional Offset/Limit UI)
-const classicPagination = new ClassicPage(20, 2); // limit=20, page=2
-console.log(classicPagination.offset); // 20
+// B. Paginação Clássica (tradicional offset/limit)
+const paginacaoClassica = new ClassicPage(20, 2); // limit=20, página=2
+console.log(paginacaoClassica.offset); // 20
 ```
 
-## 🚀 Advanced Usage
+## 🚀 Uso Avançado
 
-### 1. Type-Safe Querying
+### 1. Queries com Segurança de Tipos
 
-Leverage TypeScript to ensure you only query valid fields from your entities.
+Use TypeScript para garantir que apenas campos válidos da sua entidade sejam consultados.
 
 ```typescript
-import { SqlBuilder, QueryableFields } from '@raicampos/query-toolkit';
+import { SqlBuilder } from '@raicampos/query-toolkit';
 
-interface User {
+interface Usuario {
   id: number;
-  name: string;
+  nome: string;
   email: string;
-  metadata: { lastLogin: Date }; // Not queryable by default
+  metadata: { ultimoAcesso: Date }; // não queryável por padrão
 }
 
-// Autocomplete for 'name', 'email', 'id'
-// Error for 'metadata' or 'invalid'
-const builder = SqlBuilder.from<User>('users');
-builder.whereEquals('name', 'John');
+// Autocomplete para 'nome', 'email', 'id'
+// Erro de tipo para 'metadata' ou campos inválidos
+const builder = SqlBuilder.from<Usuario>('usuarios');
+builder.whereEquals('nome', 'João');
 ```
 
-### 2. Configurable Safety Limits
+### 2. Limites de Segurança Configuráveis
 
-Override default safety limits for complex queries.
+Sobrescreva os limites padrão para queries complexas.
 
 ```typescript
-const builder = new SqlBuilder<User>('users', undefined, {
-  maxWhereClauses: 50,    // Default: 20
-  maxOrderByClauses: 10,  // Default: 5
-  maxLimit: 1000,         // Default: 100
+const builder = new SqlBuilder<Usuario>('usuarios', undefined, {
+  maxWhereClauses: 50,   // Padrão: 20
+  maxOrderByClauses: 10, // Padrão: 5
+  maxLimit: 1000,        // Padrão: 100
 });
 ```
 
-### 3. Standardized RSQL Parsing
+### 3. Validação com Erros Estruturados
 
-Parse full RSQL strings easily with `RsqlStringParser`.
+`validate()` retorna `ValidationResult` com `ValidationError[]` — objetos com `field`, `code` e `message`. `validateOrThrow()` lança `ValidationException` na primeira falha.
+
+```typescript
+import {
+  QueryParamsParse,
+  ValidationException,
+  ValidationError,
+} from '@raicampos/query-toolkit';
+
+const parser = new QueryParamsParse(rawParams, {
+  age: {
+    type: 'number',
+    validate: (v: number) => v >= 18 || 'Deve ser maior de idade',
+  },
+  tags: 'string[]',   // FieldTypes suporta arrays
+  sort: 'name:asc',   // campos fora do schema são detectados
+});
+
+// Opção A — safe parse
+const { success, errors } = parser.validate();
+if (!success) {
+  errors.forEach((err: ValidationError) => {
+    // { field: 'age', code: 'CUSTOM_VALIDATION_FAILED', message: 'Deve ser maior de idade' }
+  });
+}
+
+// Opção B — fail fast (lança ValidationException)
+try {
+  parser.validateOrThrow();
+} catch (e) {
+  if (e instanceof ValidationException) {
+    reply.status(400).send({ details: e.errors }); // details é ValidationError[]
+  }
+}
+```
+
+### 4. Parsing RSQL Completo
 
 ```typescript
 import { RsqlStringParser, QueryParamsParse } from '@raicampos/query-toolkit';
 
-const filter = "name==John;age=gt=18;status=in=ACTIVE,PENDING";
-const parser = new RsqlStringParser(filter);
-const rawParams = parser.parse(); 
-
-const queryParams = new QueryParamsParse(rawParams).build();
+const filter = 'name==John;age=gt=18;status=in=ACTIVE,PENDING';
+const rawParams = new RsqlStringParser(filter).parse();
+const { operators } = new QueryParamsParse(rawParams);
 ```
 
-### 4. Security Features
+### 5. Operadores Customizados
 
-- **SQL Injection Protection**: Detects and blocks dangerous patterns (e.g., `; DROP TABLE`).
-- **Smart Wildcards**: The `contains` (`~=`) operator automatically wraps values with `%` for true partial matching (`ILIKE '%value%'`).
-
-## 👨‍🍳 Cookbook
-
-### Prisma Integration (sem raw SQL)
-
-Use `QueryParamsPrismaConverter` para gerar filtros compatíveis com o `where` do Prisma diretamente, sem escrever SQL:
+Registre novos operadores sem modificar o core da biblioteca (Princípio Aberto-Fechado).
 
 ```typescript
-import {
-  RsqlStringParser,
-  QueryParamsParse,
-  QueryParamsPrismaConverter,
-} from '@raicampos/query-toolkit';
+import { CustomQueryParamsOperator, OperatorRegistry, BaseOperatorVisitor } from '@raicampos/query-toolkit';
 
-// URL: /users?filter=status==ACTIVE;age=gte=18;role=in=ADMIN,MANAGER
+// 1. Defina o operador estendendo CustomQueryParamsOperator
+class RegexOperator extends CustomQueryParamsOperator<{ regex: string }, string> {
+  constructor(params: string) { super('regex=', params); }
+  safeParse() { /* ... */ }
+  value() { return this.getRawValue() || null; }
+  query() { const v = this.value(); return v ? { regex: v } : null; }
+}
+
+// 2. Registre o símbolo
+OperatorRegistry.register('regex=', (params) => new RegexOperator(params));
+
+// 3. Adicione suporte no visitor via registerHandler()
+const visitor = new MeuVisitor()
+  .registerHandler('regex=', (op, field) => ({ [field]: { regex: op.value() } }));
+```
+
+### 5. Recursos de Segurança
+
+```typescript
+import { SqlInjectionDetector } from '@raicampos/query-toolkit';
+
+// Uso estático (instância padrão compartilhada)
+SqlInjectionDetector.detect("' OR 1=1");         // true
+SqlInjectionDetector.configure({ strictMode: true }); // lança Error em vez de avisar
+
+// Uso por instância (configuração isolada por módulo)
+const detector = new SqlInjectionDetector({ strictMode: true });
+detector.detectAndWarn(inputUsuario);
+```
+
+## 👨‍🍳 Receitas
+
+### Integração com Prisma (sem SQL manual)
+
+```typescript
+import { RsqlStringParser, QueryParamsParse, QueryParamsPrismaConverter } from '@raicampos/query-toolkit';
+
+// URL: /usuarios?filter=status==ACTIVE;age=gte=18;role=in=ADMIN,MANAGER
 const rawParams = new RsqlStringParser(req.query.filter).parse();
-const operators = new QueryParamsParse(rawParams).build();
+const { operators } = new QueryParamsParse(rawParams);
 
-// Converte para o formato nativo do Prisma
 const where = new QueryParamsPrismaConverter(operators).build();
 // {
-//   status: { equals: 'ACTIVE' },
+//   status: 'ACTIVE',
 //   age:    { gte: 18 },
 //   role:   { in: ['ADMIN', 'MANAGER'] },
 // }
 
-const users = await prisma.user.findMany({ where });
+const usuarios = await prisma.usuario.findMany({ where });
 ```
 
 > **Quando usar `QueryParamsPrismaConverter` vs `SqlBuilder`?**
@@ -232,48 +279,47 @@ const users = await prisma.user.findMany({ where });
 
 | Operador RSQL | Sintaxe | Prisma gerado |
 |---|---|---|
-| Equals | `==ACTIVE` | `{ equals: 'ACTIVE' }` |
-| Not Equals | `!=ACTIVE` | `{ not: 'ACTIVE' }` |
-| Contains (case-insensitive) | `~=john` | `{ contains: 'john', mode: 'insensitive' }` |
-| Greater Than | `gt=18` | `{ gt: 18 }` |
-| Greater Than or Eq | `gte=18` | `{ gte: 18 }` |
-| Less Than | `lt=100` | `{ lt: 100 }` |
-| Less Than or Eq | `lte=100` | `{ lte: 100 }` |
-| Between | `btw=20,60` | `{ gte: 20, lte: 60 }` |
-| In | `in=A,B,C` | `{ in: ['A','B','C'] }` |
-| Not In | `out=X,Y` | `{ notIn: ['X','Y'] }` |
+| Igualdade | `==ACTIVE` | `'ACTIVE'` |
+| Diferença | `!=ACTIVE` | `{ not: 'ACTIVE' }` |
+| Contém (case-insensitive) | `~=john` | `{ contains: 'john', mode: 'insensitive' }` |
+| Maior Que | `gt=18` | `{ gt: 18 }` |
+| Maior ou Igual | `gte=18` | `{ gte: 18 }` |
+| Menor Que | `lt=100` | `{ lt: 100 }` |
+| Menor ou Igual | `lte=100` | `{ lte: 100 }` |
+| Entre | `btw=20,60` | `{ gte: 20, lte: 60 }` |
+| Contido em Lista | `in=A,B,C` | `{ in: ['A','B','C'] }` |
+| Não Contido | `out=X,Y` | `{ notIn: ['X','Y'] }` |
 
-### NestJS Integration (Pipe)
+### Integração com NestJS (Pipe)
 
 ```typescript
 import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
-import { RsqlStringParser, QueryParamsParse, QueryParamsConverter } from '@raicampos/query-toolkit';
+import { RsqlStringParser, QueryParamsParse } from '@raicampos/query-toolkit';
 
 @Injectable()
 export class RsqlPipe implements PipeTransform {
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
     if (typeof value === 'string') {
-      const raw = new RsqlStringParser(value).parse();
-      const ops = new QueryParamsParse(raw).build();
-      return new QueryParamsConverter(ops);
+      const rawParams = new RsqlStringParser(value).parse();
+      return new QueryParamsParse(rawParams);
     }
     return value;
   }
 }
 ```
 
-## 📦 Subpath Exports
+## 📦 Exports por Submódulo
 
-The package supports clean subpath exports:
+O pacote suporta imports por submódulo:
 
-- `@raicampos/query-toolkit/common` - Utilities like `parseRsqlValue` and SQL Injection detectors
-- `@raicampos/query-toolkit/converters` - Visitors (`ClauseVisitor`, `PrismaVisitor`), `QueryParamsConverter`, `QueryParamsPrismaConverter`, and `QueryParamsSqlConverter`
-- `@raicampos/query-toolkit/mappers` - `MapperBuilder` and data mapping
-- `@raicampos/query-toolkit/query-operator` - Individual modular operator implementations (Equals, GreaterThan, etc.)
-- `@raicampos/query-toolkit/rsql-parse` - `QueryParamsParse`, `RsqlStringParser`, and static `OperatorRegistry`
-- `@raicampos/query-toolkit/sql-builder` - `SqlBuilder` and SQL clauses (`ClauseAnd`, `ClauseOr`, etc.)
-- `@raicampos/query-toolkit/types` - Type definitions, `QueryableFields`, and `OperatorSymbol`
+- `@raicampos/query-toolkit/common` — Utilitários e `SqlInjectionDetector`
+- `@raicampos/query-toolkit/converters` — `BaseOperatorVisitor`, `ClauseVisitor`, `PrismaVisitor`, `SqlStringVisitor`, `QueryParamsPrismaConverter`, `QueryParamsSqlConverter`, `QueryParamsSqlStringConverter` e `UnsupportedOperatorError`
+- `@raicampos/query-toolkit/mappers` — `MapperBuilder` e mapeamento de dados
+- `@raicampos/query-toolkit/query-operator` — Operadores individuais (`EqualsOperator`, `GreaterThanOperator`, `CustomQueryParamsOperator`, etc.)
+- `@raicampos/query-toolkit/rsql-parse` — `QueryParamsParse`, `RsqlStringParser` e `OperatorRegistry`
+- `@raicampos/query-toolkit/sql-builder` — `SqlBuilder` e cláusulas SQL (`ClauseAnd`, `ClauseOr`, etc.)
+- `@raicampos/query-toolkit/types` — Definições de tipos, `QueryableFields` e `OperatorSymbol`
 
-## 📄 License
+## 📄 Licença
 
 MIT

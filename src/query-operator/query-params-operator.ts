@@ -1,5 +1,4 @@
 import { isAssigned, isNullOrUndefined, Nullable } from '@raicampos/toolkit';
-import { OperatorSymbolType } from '../common/types/operator-symbol';
 import type { OperatorVisitor } from '../converters';
 
 export type QueryParamsOperatorSuccess<ValueType> = {
@@ -18,7 +17,7 @@ export type QueryParamsOperatorSafeParse<ValueType> =
 
 export abstract class QueryParamsOperator<Condition, ValueType> {
   constructor(
-    public readonly symbol: OperatorSymbolType | '',
+    public readonly symbol: string,
     public readonly params: string
   ) {}
 
@@ -27,10 +26,10 @@ export abstract class QueryParamsOperator<Condition, ValueType> {
   abstract query(): Nullable<Condition>;
 
   /**
-   * Accept a visitor to convert this operator to a specific format
-   * @template T - The return type of the visitor
-   * @param visitor - The visitor implementation
-   * @param field - The field name this operator applies to
+   * Aceita um visitor para converter este operador para um formato específico.
+   * @template T - Tipo de retorno do visitor
+   * @param visitor - Implementação do visitor
+   * @param field - Nome do campo ao qual este operador se aplica
    */
   abstract accept<T>(visitor: OperatorVisitor<T>, field: string): T;
 

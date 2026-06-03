@@ -60,6 +60,7 @@ export default tseslint.config(
       '*.config.mjs',
       '*.config.ts',
       '.agent/**',
+      '.claude/**',
       'exemplo/**',
     ],
   }

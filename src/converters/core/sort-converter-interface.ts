@@ -1,7 +1,7 @@
 import { SortDirection } from '../../common';
 
 /**
- * Interface para visitantes que convertem sort parameters
+ * Interface para conversores que transformam parâmetros de ordenação.
  * @template T - Tipo de retorno da conversão
  */
 export interface ISortConverter<T> {

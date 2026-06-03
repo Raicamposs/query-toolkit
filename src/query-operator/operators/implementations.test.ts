@@ -9,7 +9,7 @@ import { GreaterThanOperator } from './greater-than-operator';
 import { GreaterThanOrEqualsOperator } from './greater-than-or-equals-operator';
 import { InOperator } from './in-operator';
 import { LessThanOperator } from './less-than-operator';
-import { LessThanOrEqualOperator } from './less-than-or-equals-operator';
+import { LessThanOrEqualsOperator } from './less-than-or-equals-operator';
 import { NotContainsOperator } from './not-contains-operator';
 import { NotEqualsOperator } from './not-equals-operator';
 import { NotInOperator } from './not-in-operator';
@@ -113,9 +113,9 @@ describe('Query Operators Implementations', () => {
     });
   });
 
-  describe('LessThanOrEqualOperator', () => {
+  describe('LessThanOrEqualsOperator', () => {
     it('should parse number value and query', () => {
-      const op = new LessThanOrEqualOperator('lte=65');
+      const op = new LessThanOrEqualsOperator('lte=65');
       expect(op.value()).toBe(65);
       expect(op.query()).toEqual({ lte: 65 });
       op.accept(mockVisitor, 'field');

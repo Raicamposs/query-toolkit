@@ -4,14 +4,9 @@ import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
 import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
 
-export type BetweenValue = {
-  gte: number | Date;
-  lte: number | Date;
-};
-
 export class BetweenOperator extends QueryParamsOperator<
   BetweenCondition<number | Date>,
-  BetweenValue
+  BetweenCondition<number | Date>
 > {
   private stateValues: PrimitiveValue[];
 
@@ -20,7 +15,7 @@ export class BetweenOperator extends QueryParamsOperator<
     this.stateValues = PrimitiveValue.converterArray(this.getRawValue());
   }
 
-  safeParse(): QueryParamsOperatorSafeParse<BetweenValue> {
+  safeParse(): QueryParamsOperatorSafeParse<BetweenCondition<number | Date>> {
     if (this.isNullOrUndefined()) {
       return { success: false, error: `Invalid value for ${this.symbol} operator` };
     }
@@ -39,7 +34,7 @@ export class BetweenOperator extends QueryParamsOperator<
     return { success: true, value };
   }
 
-  value(): Nullable<BetweenValue> {
+  value(): Nullable<BetweenCondition<number | Date>> {
     const values = this.stateValues
       .map((v) => v.asNumericOrDate())
       .filter((v): v is number | Date => v !== null && v !== undefined);

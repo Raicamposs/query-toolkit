@@ -118,7 +118,7 @@ describe('PrimitiveValue', () => {
 
       // Should NO LONGER parse valid date strings if instantiated manually
       const pvStr = new PrimitiveValue('2024-01-01');
-      expect(pvStr.isValidDate()).toBe(false);
+      expect(pvStr.isDate()).toBe(false);
       expect(pvStr.asDate()).toBeNull();
     });
 

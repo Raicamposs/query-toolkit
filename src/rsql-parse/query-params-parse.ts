@@ -1,6 +1,7 @@
 import { coalesce, isEmpty, ObjectEntries } from '@raicampos/toolkit';
-import { ClassicPage, CursorPage, SortDirection } from '../common';
+import { ClassicPage, CursorPage, SortDirection, SortParser } from '../common';
 import {
+  CustomValidatorFn,
   CustomValidators,
   FieldCondition,
   FieldTypes,
@@ -11,6 +12,9 @@ import {
   QueryParams,
   QueryShapeSchema,
   RsqlQueryParams,
+  ValidationError,
+  ValidationErrorCode,
+  ValidationResult,
 } from '../common/types';
 import { QueryParamsOperator } from '../query-operator';
 import { buildPagination } from './internal/pagination-builder';
@@ -18,7 +22,45 @@ import { normalizeRsqlBooleanString } from './internal/param-normalizer';
 import { validateParams } from './internal/param-validator';
 import { buildSort } from './internal/sort-builder';
 import { OperatorRegistry } from './operator-registry';
+import { ValidationException } from './validation-exception';
 
+function parseSchema<T extends object>(
+  schema: QueryShapeSchema<T>
+): {
+  keys: Map<QueryableFields<T>, FieldTypes>;
+  validators: CustomValidators<T>;
+} {
+  const keys = new Map<QueryableFields<T>, FieldTypes>();
+  const validators: CustomValidators<T> = {};
+
+  for (const [key, def] of ObjectEntries(schema)) {
+    const fieldKey = key as QueryableFields<T>;
+    if (typeof def === 'string') {
+      keys.set(fieldKey, def as FieldTypes);
+    } else if (def === true) {
+      keys.set(fieldKey, 'string');
+    } else if (def && typeof def === 'object') {
+      const valDef = def as FieldValidationDefinition<unknown>;
+      keys.set(fieldKey, valDef.type);
+      if (valDef.validate) {
+        validators[fieldKey] = valDef.validate as CustomValidatorFn<T[QueryableFields<T>]>;
+      }
+    }
+  }
+
+  return { keys, validators };
+}
+
+function isCustomValidatorsObject<T extends object>(
+  obj: QueryShapeSchema<T> | CustomValidators<T>
+): obj is CustomValidators<T> {
+  return Object.values(obj).every(
+    (val) =>
+      typeof val === 'function' || (Array.isArray(val) && val.every((v) => typeof v === 'function'))
+  );
+}
+
+export { ValidationException };
 export type {
   CustomValidators,
   FieldCondition,
@@ -28,43 +70,42 @@ export type {
   ParamsOperators,
   QueryParams,
   QueryShapeSchema,
+  ValidationError,
+  ValidationErrorCode,
+  ValidationResult,
 };
+
+const PAGINATION_KEYS = new Set(['sort', 'limit', 'offset', 'page', 'cursor']);
 
 export class QueryParamsParse<T extends object> {
   private readonly validKeys: Map<QueryableFields<T>, FieldTypes>;
   private readonly customValidators: CustomValidators<T>;
+  private readonly rawSortFields: string[];
   public readonly operators: ParamsOperators<T>;
   public readonly sort?: Record<QueryableFields<T>, SortDirection>;
   public readonly pagination?: ClassicPage | CursorPage;
 
   constructor(
     private readonly params: RsqlQueryParams<T>,
-    private readonly schema?: QueryShapeSchema<T>
+    schema?: QueryShapeSchema<T>
   ) {
     this.validKeys = new Map<QueryableFields<T>, FieldTypes>();
     this.customValidators = {};
 
     if (schema) {
-      for (const [key, def] of ObjectEntries(schema)) {
-        const fieldKey = key as QueryableFields<T>;
-        if (typeof def === 'string') {
-          this.validKeys.set(fieldKey, def as FieldTypes);
-        } else if (typeof def === 'boolean') {
-          if (def) {
-            this.validKeys.set(fieldKey, 'string');
-          }
-        } else if (def && typeof def === 'object') {
-          const valDef = def as FieldValidationDefinition<unknown>;
-          this.validKeys.set(fieldKey, valDef.type);
-          if (valDef.validate) {
-            this.customValidators[fieldKey] = valDef.validate;
-          }
-        }
-      }
+      const { keys, validators } = parseSchema(schema);
+      this.validKeys = keys;
+      this.customValidators = validators;
     }
 
     this.operators = this.buildParams();
     this.sort = buildSort(this.params, this.validKeys);
+
+    // Armazena todos os campos de sort informados (antes do filtro por schema)
+    // para detectar campos inválidos na validação
+    const rawSortParam = (this.params as Record<string, unknown>).sort;
+    this.rawSortFields =
+      typeof rawSortParam === 'string' ? Object.keys(SortParser.parse(rawSortParam)) : [];
     this.pagination = buildPagination(this.params);
   }
 
@@ -96,71 +137,91 @@ export class QueryParamsParse<T extends object> {
     return this.isCursorPage ? (this.pagination as CursorPage) : defaultPage;
   }
 
-  public validate(): { success: boolean; errors: string[] };
-
-  public validate(customValidators: CustomValidators<T>): { success: boolean; errors: string[] };
-
+  public validate(): ValidationResult;
+  public validate(customValidators: CustomValidators<T>): ValidationResult;
   public validate(
     schema: QueryShapeSchema<T>,
     customValidators?: CustomValidators<T>
-  ): { success: boolean; errors: string[] };
-
+  ): ValidationResult;
   public validate(
     schemaOrValidators?: QueryShapeSchema<T> | CustomValidators<T>,
     customValidators?: CustomValidators<T>
-  ): { success: boolean; errors: string[] } {
+  ): ValidationResult {
+    return this.executeValidation(schemaOrValidators, customValidators);
+  }
+
+  /**
+   * Executa a validação e lança `ValidationException` se houver erros.
+   * Ideal para o padrão "falha rápida" onde dados inválidos são uma exceção não recuperável.
+   *
+   * @throws {ValidationException} com a lista completa de erros estruturados
+   *
+   * @example
+   * try {
+   *   parser.validateOrThrow({ age: 'number' });
+   * } catch (e) {
+   *   if (e instanceof ValidationException) {
+   *     e.errors.forEach(err => res.addError(err.field, err.message));
+   *   }
+   * }
+   */
+  public validateOrThrow(): void;
+  public validateOrThrow(customValidators: CustomValidators<T>): void;
+  public validateOrThrow(schema: QueryShapeSchema<T>, customValidators?: CustomValidators<T>): void;
+  public validateOrThrow(
+    schemaOrValidators?: QueryShapeSchema<T> | CustomValidators<T>,
+    customValidators?: CustomValidators<T>
+  ): void {
+    const result = this.executeValidation(schemaOrValidators, customValidators);
+    if (!result.success) throw new ValidationException(result.errors);
+  }
+
+  private executeValidation(
+    schemaOrValidators?: QueryShapeSchema<T> | CustomValidators<T>,
+    customValidators?: CustomValidators<T>
+  ): ValidationResult {
+    let keys: Map<QueryableFields<T>, FieldTypes>;
+    let validators: CustomValidators<T>;
+
     if (!schemaOrValidators) {
-      return validateParams(this.operators, this.validKeys, this.customValidators);
+      keys = this.validKeys;
+      validators = this.customValidators;
+    } else if (isCustomValidatorsObject<T>(schemaOrValidators)) {
+      keys = this.validKeys;
+      validators = schemaOrValidators;
+    } else {
+      const parsed = parseSchema(schemaOrValidators);
+      keys = parsed.keys;
+      validators = customValidators
+        ? { ...parsed.validators, ...customValidators }
+        : parsed.validators;
     }
 
-    const values = Object.values(schemaOrValidators);
-    const isCustomValidators = values.some(
-      (val) => typeof val === 'function' || Array.isArray(val)
-    );
+    const { errors } = validateParams(this.operators, keys, validators);
 
-    if (isCustomValidators) {
-      return validateParams(
-        this.operators,
-        this.validKeys,
-        schemaOrValidators as CustomValidators<T>
-      );
-    }
-
-    const keysToValidate = new Map<QueryableFields<T>, FieldTypes>();
-    const validatorsToUse: CustomValidators<T> = {};
-
-    for (const [key, def] of ObjectEntries(schemaOrValidators as QueryShapeSchema<T>)) {
-      const fieldKey = key as QueryableFields<T>;
-      if (typeof def === 'string') {
-        keysToValidate.set(fieldKey, def as FieldTypes);
-      } else if (typeof def === 'boolean') {
-        if (def) {
-          keysToValidate.set(fieldKey, 'string');
-        }
-      } else if (def && typeof def === 'object') {
-        const valDef = def as FieldValidationDefinition<unknown>;
-        keysToValidate.set(fieldKey, valDef.type);
-        if (valDef.validate) {
-          validatorsToUse[fieldKey] = valDef.validate;
+    // Validação de sort — apenas quando schema está presente
+    if (keys.size > 0 && this.rawSortFields.length > 0) {
+      for (const field of this.rawSortFields) {
+        if (!keys.has(field as QueryableFields<T>)) {
+          errors.push({
+            field,
+            message: `ordenação pelo campo '${field}' não é permitida`,
+            code: 'INVALID_SORT_FIELD',
+          });
         }
       }
     }
 
-    if (customValidators) {
-      Object.assign(validatorsToUse, customValidators);
-    }
-
-    return validateParams(this.operators, keysToValidate, validatorsToUse);
+    return { success: errors.length === 0, errors };
   }
 
   private buildParams(): ParamsOperators<T> {
-    const IGNORED_KEYS = ['sort', 'limit', 'offset', 'page', 'cursor'];
     const output: Record<string, Array<QueryParamsOperator<unknown, unknown>>> = {};
 
     for (const [key, value] of ObjectEntries(coalesce(this.params, {}))) {
       if (isEmpty(value)) continue;
       if (isEmpty(key)) continue;
-      if (IGNORED_KEYS.includes(key)) continue;
+      if (PAGINATION_KEYS.has(key)) continue;
 
       if (this.validKeys.size > 0 && !this.validKeys.has(key as QueryableFields<T>)) continue;
 

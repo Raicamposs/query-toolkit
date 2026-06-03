@@ -10,6 +10,8 @@ export type QueryableFields<T> = {
     | Date
     | string[]
     | number[]
+    | boolean[]
+    | Date[]
     | null
     | undefined
     ? K

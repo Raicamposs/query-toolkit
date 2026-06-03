@@ -1,126 +1,149 @@
 # 🔄 Converters & Integração Prisma/SQL
 
-O módulo `converters` implementa o padrão de design **Visitor** para navegar pela estrutura lógica de operadores (`QueryParamsOperator`) e transformá-los no formato de destino desejado (objetos `where` do Prisma ou cláusulas de consulta SQL).
+O módulo `converters` implementa o padrão **Visitor** para transformar operadores (`QueryParamsOperator`) no formato de destino desejado: objetos `where` do Prisma ou cláusulas SQL parametrizadas.
 
 ---
 
 ## 🏗️ O Padrão Visitor no Core
 
-As classes de operadores lógicos de domínio (como `EqualsOperator`, `InOperator`, etc.) representam estruturas puras de negócio. A arquitetura de conversores utiliza o padrão **Visitor** para isolar as regras de infraestrutura (como renderizar SQL ou mapear chaves para Prisma) sem acoplar essa lógica de persistência nas regras de negócio dos operadores.
+As classes de operadores representam estruturas puras de domínio. Os visitors isolam as regras de infraestrutura sem acoplar lógica de persistência nos operadores.
 
-A biblioteca disponibiliza duas implementações principais de `OperatorVisitor<R>` sob o capô:
-1. **`ClauseVisitor`**: Transforma operadores em cláusulas relacionais parametrizadas do `SqlBuilder` (`Clause[]`).
-2. **`PrismaVisitor`**: Transforma operadores em objetos parciais compatíveis com a sintaxe nativa do Prisma ORM.
+A biblioteca disponibiliza três implementações de `OperatorVisitor<R>`:
+
+1. **`ClauseVisitor`** — transforma operadores em cláusulas SQL parametrizadas (`Clause[]`)
+2. **`PrismaVisitor`** — transforma operadores em objetos parciais compatíveis com o Prisma ORM
+3. **`SqlStringVisitor`** — transforma operadores diretamente em fragmentos SQL como `string`
+
+Todos estendem `BaseOperatorVisitor`, que fornece suporte automático a operadores customizados via `registerHandler()`.
 
 ---
 
-## ⚡ Conversores de Conveniência Especializados
+## ⚡ Conversores de Conveniência
 
-Para simplificar a implementação na camada de infraestrutura/repositório da sua aplicação, o toolkit exporta conversores dedicados e fortemente tipados.
+### 1. `QueryParamsPrismaConverter`
 
-### 1. `QueryParamsPrismaConverter` (Integração Prisma ORM)
-Este conversor transforma os operadores de domínio gerados no parsing diretamente em um objeto compatível com a propriedade `where` do Prisma Client.
+Transforma operadores diretamente em um objeto compatível com a propriedade `where` do Prisma Client. O retorno é tipado como `Record<string, PrismaWhereValue>`.
 
-#### 🧠 Algoritmo de Fusão Inteligente (Field Clause Merging)
-Se você tiver múltiplos filtros aplicados sobre a mesma propriedade (por exemplo, na URL: `price=gt=10;price=lt=50`), um mapeamento simples substituiria a primeira propriedade pela segunda na serialização do objeto JS. O `QueryParamsPrismaConverter` possui uma lógica inteligente que **funde as condições de campos idênticos** em um único objeto estruturado.
+#### Fusão inteligente de condições no mesmo campo
+
+Se o mesmo campo receber múltiplos filtros (`price=gt=10;price=lt=50`), o conversor **funde as condições** em um único objeto estruturado:
 
 ```typescript
 import { QueryParamsParse, QueryParamsPrismaConverter } from '@raicampos/query-toolkit';
 
-// 1. Filtros recebidos: idade maior ou igual a 18 E menor ou igual a 60
 const rawParams = {
   age: ['gte=18', 'lte=60'],
-  status: '==ACTIVE'
+  status: '==ACTIVE',
 };
 
-const operators = new QueryParamsParse(rawParams).build();
+const { operators } = new QueryParamsParse(rawParams);
+const where = new QueryParamsPrismaConverter(operators).build();
 
-// 2. Executa a conversão para Prisma
-const prismaConverter = new QueryParamsPrismaConverter(operators);
-const where = prismaConverter.build();
-
-// Retorna um objeto Where aninhado do Prisma fundido com precisão:
 // {
-//   status: { equals: 'ACTIVE' },
+//   status: 'ACTIVE',
 //   age: { gte: 18, lte: 60 }
 // }
 ```
 
-### 2. `QueryParamsSqlConverter` (Integração SQL Puro / SqlBuilder)
-Converte os operadores em uma lista de objetos `Clause` que podem ser fornecidos diretamente para o `SqlBuilder` montar queries relacionais seguras e parametrizadas de alta performance.
+### 2. `QueryParamsSqlConverter`
+
+Converte operadores em uma lista de objetos `Clause` para uso com o `SqlBuilder` (queries parametrizadas).
 
 ```typescript
 import { QueryParamsParse, QueryParamsSqlConverter, SqlBuilder } from '@raicampos/query-toolkit';
 
 const rawParams = {
   name: '~=John',
-  status: '==ACTIVE'
+  status: '==ACTIVE',
 };
 
-const operators = new QueryParamsParse(rawParams).build();
+const { operators } = new QueryParamsParse(rawParams);
+const clauses = new QueryParamsSqlConverter(operators).build();
 
-// 1. Converte operadores para Clauses do SqlBuilder
-const sqlConverter = new QueryParamsSqlConverter(operators);
-const clauses = sqlConverter.build();
+const { sql, params } = SqlBuilder.from('users')
+  .whereClauses(clauses)
+  .build();
 
-// 2. Alimenta o SqlBuilder
-const builder = SqlBuilder.from('users')
-  .whereClauses(clauses);
-
-const query = builder.build();
-// Retorna:
-// sql: "SELECT * FROM users WHERE (name ILIKE $1) AND (status = $2)"
+// sql:    "SELECT * FROM users WHERE (name ILIKE $1) AND (status = $2)"
 // params: ['%John%', 'ACTIVE']
 ```
 
+### 3. `QueryParamsSqlStringConverter`
+
+Gera uma **string SQL pronta** com as condições unidas por AND. Indicado para ORMs ou query builders externos que aceitam fragmentos SQL como string, ou para logging e debugging.
+
+Os valores são escapados via `SqlPrimitiveValue` — mesma proteção contra SQL Injection usada pelo `SqlBuilder`.
+
+```typescript
+import { QueryParamsParse, QueryParamsSqlStringConverter } from '@raicampos/query-toolkit';
+
+const rawParams = {
+  nome: '~=John',
+  preco: ['gte=10', 'lte=50'],
+  status: '==ACTIVE',
+};
+
+const { operators } = new QueryParamsParse(rawParams);
+const converter = new QueryParamsSqlStringConverter(operators);
+
+// WHERE completo como string
+const where = converter.build();
+// "nome ILIKE '%John%' AND preco >= 10 AND preco <= 50 AND status = 'ACTIVE'"
+
+// ORDER BY como string
+const orderBy = converter.sort({ nome: 'asc', preco: 'desc' });
+// "nome ASC, preco DESC"
+
+// WHERE + ORDER BY em uma única chamada
+const { where: w, orderBy: o } = converter.buildQuery({ nome: 'asc' });
+```
+
+> **Quando usar `QueryParamsSqlStringConverter` vs `QueryParamsSqlConverter`?**
+> - `QueryParamsSqlConverter` → use com o `SqlBuilder` quando precisar de queries **parametrizadas** (`$1`, `$2`, …) — a forma mais segura.
+> - `QueryParamsSqlStringConverter` → use quando a integração com um ORM ou query builder externo exige uma **string SQL direta**. Os valores ainda são escapados, mas interpolados na string.
+
 ---
 
-## 🚀 Exemplo Real de Uso em Repositório (Clean Architecture)
+## 🚀 Exemplo em Repositório (Clean Architecture)
 
-De acordo com os princípios de **Clean Architecture**, a camada de apresentação (Controllers) não deve conhecer detalhes de infraestrutura (como banco ou ORM). O pipeline ideal é receber os filtros neutros no controller e convertê-los no repositório.
+A camada de apresentação passa filtros neutros de domínio; o repositório converte para a infraestrutura específica.
 
-### Repositório Prisma (`coffee-prisma.repository.ts`)
+### Repositório Prisma
+
 ```typescript
 import { PrismaClient } from '@prisma/client';
-import { QueryParamsPrismaConverter } from '@raicampos/query-toolkitt';
+import { QueryParamsPrismaConverter } from '@raicampos/query-toolkit';
 import { CoffeeFilters } from '../domain/coffee-filters';
 
 export class CoffeePrismaRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async list(filters: CoffeeFilters) {
-    // Converte os operadores lógicos neutros para infraestrutura Prisma
     const where = new QueryParamsPrismaConverter(filters).build();
-
-    return this.prisma.coffee.findMany({
-      where,
-      orderBy: { name: 'asc' }
-    });
+    return this.prisma.coffee.findMany({ where, orderBy: { name: 'asc' } });
   }
 }
 ```
 
-### Repositório SQL Nativo (`coffee-pg.repository.ts`)
+### Repositório SQL Nativo
+
 ```typescript
 import { Client } from 'pg';
-import { QueryParamsSqlConverter, SqlBuilder } from '@raicampos/query-toolkitt';
+import { QueryParamsSqlConverter, SqlBuilder } from '@raicampos/query-toolkit';
 import { CoffeeFilters } from '../domain/coffee-filters';
 
 export class CoffeePgRepository {
   constructor(private readonly db: Client) {}
 
   async list(filters: CoffeeFilters) {
-    // 1. Converte operadores para Clauses
     const clauses = new QueryParamsSqlConverter(filters).build();
 
-    // 2. Usa o SqlBuilder para montar a query de forma segura
     const { sql, params } = SqlBuilder.from('coffees')
       .whereClauses(clauses)
       .addOrder('asc', 'name')
       .build();
 
-    const result = await this.db.query(sql, params);
-    return result.rows;
+    return (await this.db.query(sql, params)).rows;
   }
 }
 ```
@@ -129,7 +152,21 @@ export class CoffeePgRepository {
 
 ## 🛡️ Estratégia de Fail-Fast
 
-Ambos os Visitors foram projetados para garantir segurança máxima em tempo de execução. Ao invés de ignorar silenciosamente operações inválidas ou não mapeadas (o que poderia resultar em queries mal formadas ou vazamento de dados), o sistema falha imediatamente:
+Os visitors lançam exceções explícitas ao encontrar dados inválidos:
 
-* **Validação do Operador `Between`**: Lança erros detalhados se o valor fornecido ao operador `btw=` não contiver exatamente dois elementos válidos.
-* **Operadores Incompatíveis no Prisma**: Se a estrutura contiver uma cláusula de array complexa (como `<@` ou `@>`) e for convertida pelo `QueryParamsPrismaConverter`, um erro descritivo será lançado detalhando que a operação não é suportada nativamente no motor do Prisma ORM. Isso previne falhas silenciosas na persistência.
+- **`BetweenOperator` com valor inválido** — lança `Error` se `value()` retornar `null` (ex: apenas um número fornecido ao `btw=`)
+- **Operador `<@` no Prisma** — lança `UnsupportedOperatorError` (tipado, capturável com `instanceof`) porque o Prisma não suporta `arrayIsContainedBy` nativamente:
+
+```typescript
+import { UnsupportedOperatorError } from '@raicampos/query-toolkit';
+
+try {
+  const where = new QueryParamsPrismaConverter(operators).build();
+} catch (e) {
+  if (e instanceof UnsupportedOperatorError) {
+    // e.operatorSymbol → '<@'
+    // e.field          → nome do campo afetado
+    console.warn(`Operador "${e.operatorSymbol}" não suportado no Prisma para o campo "${e.field}"`);
+  }
+}
+```

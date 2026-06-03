@@ -1,3 +1,4 @@
+export * from './custom-query-params-operator';
 export * from './operators/array-contains-operator';
 export * from './operators/array-is-contained-by-operator';
 export * from './operators/array-overlap-operator';

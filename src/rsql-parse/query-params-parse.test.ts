@@ -3,6 +3,7 @@ import { ClassicPage, CursorPage, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT } from '../
 import { EqualsOperator } from '../query-operator';
 import { OperatorRegistry } from './operator-registry';
 import { QueryParamsParse, QueryShapeSchema } from './query-params-parse';
+import { ValidationException } from './validation-exception';
 
 interface UserTest {
   id: number;
@@ -49,7 +50,7 @@ describe('QueryParamsParse', () => {
     }
 
     // Registrar o operador customizado
-    OperatorRegistry.register('fake=' as any, (params: string) => {
+    OperatorRegistry.register('fake=', (params: string) => {
       const [, value] = params.split('fake=');
       return new CustomFakeOperator(`==${value}`);
     });
@@ -241,35 +242,50 @@ describe('QueryParamsParse', () => {
       expect(validation.errors).toHaveLength(0);
     });
 
+    it('deve retornar ValidationError estruturado com field, code e message', () => {
+      const shape = { age: 'number' } as const;
+      const parser = new QueryParamsParse<UserTest>({ age: '==texto-invalido' }, shape);
+
+      const { errors } = parser.validate();
+
+      expect(errors[0]).toMatchObject({
+        field: 'age',
+        code: 'INVALID_TYPE',
+        message: expect.stringContaining("tipo esperado: 'number'"),
+      });
+    });
+
     it('deve falhar na validação com erro customizado se o validador retornar uma string', () => {
       const shape = { age: 'number' } as const;
       const parser = new QueryParamsParse<UserTest>({ age: '==10' }, shape);
 
       const validation = parser.validate({
         age: (value) => {
-          if (value > 6) {
-            return 'O valor do campo age deve estar entre 1 e 6';
-          }
+          if (value > 6) return 'O valor do campo age deve estar entre 1 e 6';
           return true;
         },
       });
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain(
-        "Field 'age': O valor do campo age deve estar entre 1 e 6"
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({
+          field: 'age',
+          code: 'CUSTOM_VALIDATION_FAILED',
+          message: 'O valor do campo age deve estar entre 1 e 6',
+        })
       );
     });
 
-    it('deve falhar na validação com erro padrão se o validador retornar false', () => {
+    it('deve falhar na validação com erro genérico se o validador retornar false', () => {
       const shape = { age: 'number' } as const;
       const parser = new QueryParamsParse<UserTest>({ age: '==15' }, shape);
 
-      const validation = parser.validate({
-        age: (value) => value < 10,
-      });
+      const validation = parser.validate({ age: (value) => value < 10 });
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain("Field 'age': validation failed.");
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({ field: 'age', code: 'CUSTOM_VALIDATION_FAILED' })
+      );
     });
 
     it('deve falhar na validação capturando exceção lançada na função validadora', () => {
@@ -283,8 +299,12 @@ describe('QueryParamsParse', () => {
       });
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain(
-        "Field 'name': Nome inválido devido a políticas de segurança"
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({
+          field: 'name',
+          code: 'CUSTOM_VALIDATION_FAILED',
+          message: 'Nome inválido devido a políticas de segurança',
+        })
       );
     });
 
@@ -316,12 +336,13 @@ describe('QueryParamsParse', () => {
       });
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain("Field 'age': expected type 'number'.");
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({ field: 'age', code: 'INVALID_TYPE' })
+      );
       expect(customValidatorCalled).toBe(false);
     });
 
     it('deve validar tipos e aplicar regras personalizadas quando o shape é passado diretamente no validate()', () => {
-      // Instancia sem shape no construtor
       const parser = new QueryParamsParse<UserTest>({
         age: '==5',
         name: '==John',
@@ -329,10 +350,7 @@ describe('QueryParamsParse', () => {
       } as any);
 
       const validation = parser.validate(
-        {
-          age: 'number',
-          name: 'string',
-        },
+        { age: 'number', name: 'string' },
         {
           age: (value) => value > 0 || 'Deve ser positivo',
           name: (value) => value.length > 2 || 'Nome muito curto',
@@ -346,21 +364,18 @@ describe('QueryParamsParse', () => {
     it('deve falhar a validação se o tipo do shape passado no validate() for incorreto', () => {
       const parser = new QueryParamsParse<UserTest>({ age: '==texto-invalido' });
 
-      const validation = parser.validate({
-        age: 'number',
-      });
+      const validation = parser.validate({ age: 'number' });
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain("Field 'age': expected type 'number'.");
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({ field: 'age', code: 'INVALID_TYPE' })
+      );
     });
 
     it('deve validar com sucesso usando o QueryShapeSchema definido no construtor', () => {
       const schema: QueryShapeSchema<UserTest> = {
         name: 'string',
-        age: {
-          type: 'number',
-          validate: (value: any) => value > 0 || 'Idade deve ser positiva',
-        },
+        age: { type: 'number', validate: (value: any) => value > 0 || 'Idade deve ser positiva' },
       };
 
       const parser = new QueryParamsParse<UserTest>({ name: '==John', age: '==25' }, schema);
@@ -383,7 +398,9 @@ describe('QueryParamsParse', () => {
       const validation = parser.validate();
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain("Field 'age': Idade deve ser maior que 30");
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({ field: 'age', message: 'Idade deve ser maior que 30' })
+      );
     });
 
     it('deve suportar uma cadeia de validadores customizados (array) declarados no construtor', () => {
@@ -397,22 +414,20 @@ describe('QueryParamsParse', () => {
         },
       };
 
-      // Cenário com valor fora do range superior
       const parser1 = new QueryParamsParse<UserTest>({ age: '==65' }, schema);
-      const validation1 = parser1.validate();
-      expect(validation1.success).toBe(false);
-      expect(validation1.errors).toContain("Field 'age': Deve ter no máximo 60 anos");
+      expect(parser1.validate().success).toBe(false);
+      expect(parser1.validate().errors).toContainEqual(
+        expect.objectContaining({ field: 'age', message: 'Deve ter no máximo 60 anos' })
+      );
 
-      // Cenário com valor fora do range inferior
       const parser2 = new QueryParamsParse<UserTest>({ age: '==16' }, schema);
-      const validation2 = parser2.validate();
-      expect(validation2.success).toBe(false);
-      expect(validation2.errors).toContain("Field 'age': Deve ser maior de idade");
+      expect(parser2.validate().success).toBe(false);
+      expect(parser2.validate().errors).toContainEqual(
+        expect.objectContaining({ field: 'age', message: 'Deve ser maior de idade' })
+      );
 
-      // Cenário correto
       const parser3 = new QueryParamsParse<UserTest>({ age: '==25' }, schema);
-      const validation3 = parser3.validate();
-      expect(validation3.success).toBe(true);
+      expect(parser3.validate().success).toBe(true);
     });
 
     it('deve impedir a execução de validadores do construtor caso a validação de tipo inicial do shape falhe (curto-circuito)', () => {
@@ -431,7 +446,9 @@ describe('QueryParamsParse', () => {
       const validation = parser.validate();
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain("Field 'age': expected type 'number'.");
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({ field: 'age', code: 'INVALID_TYPE' })
+      );
       expect(customValidatorCalled).toBe(false);
     });
 
@@ -441,15 +458,11 @@ describe('QueryParamsParse', () => {
           type: 'string',
           validate: (val: any) => val.startsWith('J') || 'Nome deve começar com J',
         },
-        age: {
-          type: 'number',
-          validate: (val: any) => val >= 18 || 'Deve ser maior de idade',
-        },
+        age: { type: 'number', validate: (val: any) => val >= 18 || 'Deve ser maior de idade' },
       };
 
       const parser = new QueryParamsParse<UserTest>({ name: '==John', age: '==20' }, schema);
-      const validation = parser.validate();
-      expect(validation.success).toBe(true);
+      expect(parser.validate().success).toBe(true);
     });
 
     it('deve suportar passar o QueryShapeSchema diretamente no validate() com validadores acoplados', () => {
@@ -464,7 +477,89 @@ describe('QueryParamsParse', () => {
       });
 
       expect(validation.success).toBe(false);
-      expect(validation.errors).toContain("Field 'age': Idade deve ser menor que 20");
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({ field: 'age', message: 'Idade deve ser menor que 20' })
+      );
+    });
+  });
+
+  describe('validateOrThrow()', () => {
+    it('não lança quando a validação passa', () => {
+      const parser = new QueryParamsParse<UserTest>({ age: '==25' }, { age: 'number' } as const);
+      expect(() => parser.validateOrThrow()).not.toThrow();
+    });
+
+    it('lança ValidationException quando a validação falha', () => {
+      const parser = new QueryParamsParse<UserTest>({ age: '==texto' }, { age: 'number' } as const);
+      expect(() => parser.validateOrThrow()).toThrow(ValidationException);
+    });
+
+    it('ValidationException contém os erros estruturados', () => {
+      const parser = new QueryParamsParse<UserTest>({ age: '==texto', name: '==John' }, {
+        age: 'number',
+        name: 'string',
+      } as const);
+      try {
+        parser.validateOrThrow();
+        expect.fail('deveria ter lançado');
+      } catch (e) {
+        expect(e).toBeInstanceOf(ValidationException);
+        const exc = e as ValidationException;
+        expect(exc.errors).toContainEqual(
+          expect.objectContaining({ field: 'age', code: 'INVALID_TYPE' })
+        );
+      }
+    });
+
+    it('mensagem da exceção resume os erros', () => {
+      const parser = new QueryParamsParse<UserTest>({ age: '==texto' }, { age: 'number' } as const);
+      try {
+        parser.validateOrThrow();
+      } catch (e) {
+        expect((e as Error).message).toContain('age');
+      }
+    });
+
+    it('aceita customValidators diretamente — mesmo comportamento que validate()', () => {
+      const parser = new QueryParamsParse<UserTest>({ age: '==5' }, { age: 'number' } as const);
+      expect(() =>
+        parser.validateOrThrow({ age: (v) => v > 0 || 'Deve ser positivo' })
+      ).not.toThrow();
+    });
+  });
+
+  describe('Validação de Sort', () => {
+    it('reprova quando campo de sort não está no schema', () => {
+      const parser = new QueryParamsParse<UserTest>(
+        { sort: 'secret:asc' } as any,
+        { age: 'number', name: 'string' } as const
+      );
+      const result = parser.validate();
+      expect(result.success).toBe(false);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ field: 'secret', code: 'INVALID_SORT_FIELD' })
+      );
+    });
+
+    it('aprova quando campo de sort está no schema', () => {
+      const parser = new QueryParamsParse<UserTest>(
+        { sort: 'name:asc' } as any,
+        { age: 'number', name: 'string' } as const
+      );
+      expect(parser.validate().success).toBe(true);
+    });
+
+    it('não valida sort quando schema não está presente', () => {
+      const parser = new QueryParamsParse<UserTest>({ sort: 'campoQualquer:asc' } as any);
+      expect(parser.validate().success).toBe(true);
+    });
+
+    it('validateOrThrow lança quando sort é inválido', () => {
+      const parser = new QueryParamsParse<UserTest>(
+        { sort: 'secret:asc' } as any,
+        { age: 'number' } as const
+      );
+      expect(() => parser.validateOrThrow()).toThrow(ValidationException);
     });
   });
 });

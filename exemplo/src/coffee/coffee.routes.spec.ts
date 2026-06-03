@@ -109,7 +109,9 @@ describe('Coffee Routes Integration Tests (Fastify + In-Memory Repository)', () 
       expect(responsePrice.statusCode).toBe(400);
       const bodyPrice = JSON.parse(responsePrice.body);
       expect(bodyPrice.error).toBe('Validation Error');
-      expect(bodyPrice.details).toContain("Field 'price': O preço para filtro não pode ser negativo");
+      expect(bodyPrice.details).toContainEqual(
+        expect.objectContaining({ field: 'price', message: 'O preço para filtro não pode ser negativo' })
+      );
 
       // Testando ID menor ou igual a zero
       const responseId = await app.inject({
@@ -119,7 +121,9 @@ describe('Coffee Routes Integration Tests (Fastify + In-Memory Repository)', () 
       expect(responseId.statusCode).toBe(400);
       const bodyId = JSON.parse(responseId.body);
       expect(bodyId.error).toBe('Validation Error');
-      expect(bodyId.details).toContain("Field 'id': O ID para filtro deve ser maior que zero");
+      expect(bodyId.details).toContainEqual(
+        expect.objectContaining({ field: 'id', message: 'O ID para filtro deve ser maior que zero' })
+      );
     });
   });
 

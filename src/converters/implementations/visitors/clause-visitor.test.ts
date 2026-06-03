@@ -10,7 +10,7 @@ import {
   GreaterThanOrEqualsOperator,
   InOperator,
   LessThanOperator,
-  LessThanOrEqualOperator,
+  LessThanOrEqualsOperator,
   NotContainsOperator,
   NotEqualsOperator,
   NotInOperator,
@@ -81,7 +81,7 @@ describe('ClauseVisitor', () => {
   });
 
   it('should visit less than or equals', () => {
-    const op = new LessThanOrEqualOperator('lte=10');
+    const op = new LessThanOrEqualsOperator('lte=10');
     const result = visitor.visitLessThanOrEquals(op, 'field');
     expect(result).toBeInstanceOf(ClauseLessThanOrEquals);
   });
@@ -107,7 +107,7 @@ describe('ClauseVisitor', () => {
   it('should throw error when visiting between with invalid value format', () => {
     const op = new BetweenOperator('btw=1');
     expect(() => visitor.visitBetween(op, 'field')).toThrow(
-      'Invalid value for Between operator on field "field". Expected an object with gte and lte.'
+      'Invalid value for Between operator on field "field".'
     );
   });
 

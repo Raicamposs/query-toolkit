@@ -83,10 +83,6 @@ export class PrimitiveValue {
     return typeof this.value === 'number';
   }
 
-  isValidDate(): boolean {
-    return this.isDate();
-  }
-
   asDate(): Nullable<Date> {
     if (this.isDate()) return this.value as Date;
     return null;

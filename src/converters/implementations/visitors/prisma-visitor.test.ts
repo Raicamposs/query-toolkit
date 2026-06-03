@@ -10,12 +10,13 @@ import {
   GreaterThanOrEqualsOperator,
   InOperator,
   LessThanOperator,
-  LessThanOrEqualOperator,
+  LessThanOrEqualsOperator,
   NotContainsOperator,
   NotEqualsOperator,
   NotInOperator,
   UnknownOperator,
 } from '../../../query-operator';
+import { UnsupportedOperatorError } from '../../../converters/core/unsupported-operator-error';
 import { PrismaVisitor } from './prisma-visitor';
 
 describe('PrismaVisitor', () => {
@@ -57,7 +58,7 @@ describe('PrismaVisitor', () => {
   });
 
   it('should visit less than or equals', () => {
-    const op = new LessThanOrEqualOperator('lte=10');
+    const op = new LessThanOrEqualsOperator('lte=10');
     expect(visitor.visitLessThanOrEquals(op, 'field')).toEqual({ field: { lte: 10 } });
   });
 
@@ -101,11 +102,9 @@ describe('PrismaVisitor', () => {
     expect(visitor.visitUnknown(op, 'field')).toEqual({ field: 'val' });
   });
 
-  it('should visit array is contained by and throw error', () => {
+  it('should visit array is contained by and throw UnsupportedOperatorError', () => {
     const op = new ArrayIsContainedByOperator('itb=[v1,v2]');
-    expect(() => visitor.visitArrayIsContainedBy(op, 'field')).toThrow(
-      'The "is contained by" array operator is not natively supported by Prisma on field "field". Use raw query execution instead.'
-    );
+    expect(() => visitor.visitArrayIsContainedBy(op, 'field')).toThrow(UnsupportedOperatorError);
   });
 
   it('should handle single value in array contains', () => {
@@ -126,9 +125,9 @@ describe('PrismaVisitor', () => {
 
   it('should handle single value in between and throw validation error', () => {
     const op = new BetweenOperator('btw=1,10');
-    vi.spyOn(op, 'value').mockReturnValue(1 as any);
+    vi.spyOn(op, 'value').mockReturnValue(null as any);
     expect(() => visitor.visitBetween(op, 'field')).toThrow(
-      'Invalid value for Between operator on field "field". Expected an object with gte and lte.'
+      'Invalid value for Between operator on field "field".'
     );
   });
 

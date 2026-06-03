@@ -3,7 +3,7 @@ import {
   EqualsOperator,
   GreaterThanOperator,
   GreaterThanOrEqualsOperator,
-  LessThanOrEqualOperator,
+  LessThanOrEqualsOperator,
   NotEqualsOperator,
 } from '../../../query-operator';
 import { QueryParamsPrismaConverter } from './query-params-prisma-converter';
@@ -59,7 +59,7 @@ describe('QueryParamsPrismaConverter', () => {
 
   it('should merge range operators (gte and lte) correctly for the same field', () => {
     const op1 = new GreaterThanOrEqualsOperator('gte=18');
-    const op2 = new LessThanOrEqualOperator('lte=65');
+    const op2 = new LessThanOrEqualsOperator('lte=65');
 
     const converter = new QueryParamsPrismaConverter({ age: [op1, op2] });
     const result = converter.build();

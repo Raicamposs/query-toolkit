@@ -8,11 +8,11 @@ export type NotEqualsCondition<T extends PrimitiveValueType> = {
   notEquals: T;
 };
 
-export type ContainsCondition = {
-  contains: string;
+export type ContainsCondition<T extends string = string> = {
+  contains: T;
 };
 
-export type NotContainsCondition<T extends string> = {
+export type NotContainsCondition<T extends string = string> = {
   notContains: T;
 };
 
@@ -40,23 +40,10 @@ export type LessThanOrEqualsCondition<T extends number | Date> = {
   lte: T;
 };
 
-export type BetweenCondition<T extends number | Date> =
-  | {
-      gt: T;
-      lt: T;
-    }
-  | {
-      gte: T;
-      lte: T;
-    }
-  | {
-      gt: T;
-      lte: T;
-    }
-  | {
-      gte: T;
-      lt: T;
-    };
+export type BetweenCondition<T extends number | Date> = {
+  gte: T;
+  lte: T;
+};
 
 export type ArrayIsContainedByCondition = {
   arrayIsContainedBy: PrimitiveValueType[];

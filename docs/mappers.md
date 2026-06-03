@@ -79,7 +79,7 @@ Ao trabalhar com filtros dinâmicos recebidos na URL, você pode reaproveitar o 
 O `SqlBuilder` aceita o mapeamento do `MapperBuilder` como segundo argumento no construtor. Ele traduzirá dinamicamente todas as cláusulas lógicas informadas na listagem:
 
 ```typescript
-import { MapperBuilder, SqlBuilder, QueryParamsSqlConverter } from '@raicampos/uery-toolkit';
+import { MapperBuilder, SqlBuilder, QueryParamsSqlConverter } from '@raicampos/query-toolkit';
 
 // 1. Definição do Mapeador de Domínio para Persistência
 const mapping = {
@@ -93,7 +93,7 @@ const userMapper = new MapperBuilder(mapping);
 const rawParams = {
   email: '==john@example.com'
 };
-const operators = new QueryParamsParse(rawParams).build();
+const { operators } = new QueryParamsParse(rawParams);
 const clauses = new QueryParamsSqlConverter(operators).build();
 
 // 3. Alimenta o SqlBuilder passando o dicionário de mapeamentos

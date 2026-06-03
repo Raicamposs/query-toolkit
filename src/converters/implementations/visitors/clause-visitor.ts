@@ -9,7 +9,7 @@ import type { GreaterThanOperator } from '../../../query-operator/operators/grea
 import type { GreaterThanOrEqualsOperator } from '../../../query-operator/operators/greater-than-or-equals-operator';
 import type { InOperator } from '../../../query-operator/operators/in-operator';
 import type { LessThanOperator } from '../../../query-operator/operators/less-than-operator';
-import type { LessThanOrEqualOperator } from '../../../query-operator/operators/less-than-or-equals-operator';
+import type { LessThanOrEqualsOperator } from '../../../query-operator/operators/less-than-or-equals-operator';
 import type { NotContainsOperator } from '../../../query-operator/operators/not-contains-operator';
 import type { NotEqualsOperator } from '../../../query-operator/operators/not-equals-operator';
 import type { NotInOperator } from '../../../query-operator/operators/not-in-operator';
@@ -32,12 +32,12 @@ import {
   ClauseNotILike,
   ClauseNotIn,
 } from '../../../sql-builder/implementations';
-import type { OperatorVisitor } from '../../core/operator-visitor';
+import { BaseOperatorVisitor } from '../../core/base-operator-visitor';
 
 /**
  * Visitor implementation that converts QueryParamsOperator to SQL Clause objects
  */
-export class ClauseVisitor implements OperatorVisitor<Clause> {
+export class ClauseVisitor extends BaseOperatorVisitor<Clause> {
   private assertValue(value: unknown, field: string, operatorName: string): asserts value {
     if (isNullOrUndefined(value))
       throw new Error(`Field "${field}": value is required for ${operatorName} operator.`);
@@ -84,7 +84,7 @@ export class ClauseVisitor implements OperatorVisitor<Clause> {
     return new ClauseLessThan(field, value);
   }
 
-  visitLessThanOrEquals(operator: LessThanOrEqualOperator, field: string): Clause {
+  visitLessThanOrEquals(operator: LessThanOrEqualsOperator, field: string): Clause {
     const value = operator.value();
     this.assertValue(value, field, 'LessThanOrEquals');
     return new ClauseLessThanOrEquals(field, value);
@@ -105,15 +105,8 @@ export class ClauseVisitor implements OperatorVisitor<Clause> {
   visitBetween(operator: BetweenOperator, field: string): Clause {
     const value = operator.value();
 
-    if (
-      typeof value !== 'object' ||
-      isNullOrUndefined(value) ||
-      !('gte' in value) ||
-      !('lte' in value)
-    ) {
-      throw new Error(
-        `Invalid value for Between operator on field "${field}". Expected an object with gte and lte.`
-      );
+    if (isNullOrUndefined(value)) {
+      throw new Error(`Invalid value for Between operator on field "${field}".`);
     }
 
     return new ClauseBetween(field, value.gte, value.lte);

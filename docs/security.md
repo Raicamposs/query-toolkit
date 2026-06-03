@@ -1,57 +1,83 @@
 # 🛡️ Segurança, Limites & Boas Práticas
 
-A segurança de dados é um pilar fundamental do `@raicampos/query-toolkit`. A biblioteca implementa proteções ativas e passivas para blindar a camada de dados da sua aplicação contra ataques cibernéticos comuns (especialmente **SQL Injection**) e exaustão de recursos do servidor.
+A segurança de dados é um pilar fundamental do `@raicampos/query-toolkit`. A biblioteca implementa proteções ativas e passivas contra **SQL Injection** e exaustão de recursos.
 
 ---
 
-## 1. 🛡️ Prevenção contra SQL Injection (SQLi)
-
-O toolkit combate injeções SQL através de duas camadas de defesa independentes:
+## 1. 🛡️ Prevenção contra SQL Injection
 
 ### Camada A: Queries Parametrizadas (Defesa Ativa)
-A forma mais segura de prevenir SQLi é **nunca** concatenar variáveis diretamente na instrução SQL. O `SqlBuilder` e a classe `ClauseVisitor` isolam completamente a instrução SQL dos valores reais usando placeholders indexados (`$1`, `$2`, ...).
 
-O banco de dados compila o plano de execução da query antes de injetar os valores parametrizados, garantindo que qualquer input de usuário seja tratado estritamente como um dado primitivo e não como comandos executáveis.
+O `SqlBuilder` e o `ClauseVisitor` isolam completamente a instrução SQL dos valores usando placeholders indexados (`$1`, `$2`, …). O banco compila o plano de execução antes de injetar os valores, garantindo que qualquer input seja tratado como dado — nunca como comando.
 
 ```typescript
-// SEGURO - Os parâmetros nunca se misturam com o comando executado
 const { sql, params } = builder.build();
-await db.query(sql, params);
+await db.query(sql, params); // SEGURO — valores nunca se misturam com o SQL
 ```
 
-### Camada B: Detector de Assinaturas Maliciosas (`SqlInjectionDetector`)
-Como proteção de redundância, o toolkit possui um analisador estático integrado (`SqlInjectionDetector`) que inspeciona strings e valores sanitizando ou bloqueando strings suspeitas que contêm assinaturas conhecidas de ataques de injeção SQL, tais como:
-* Union Selects: `UNION SELECT ...`
-* Comentários SQL de encerramento: `--` ou `/*`
-* Modificadores condicionais tautológicos: `' OR '1'='1`
-* Comandos empilhados perigosos: `; DROP TABLE`, `; UPDATE`, `; DELETE`
+### Camada B: `SqlInjectionDetector` (Redundância Estática)
 
-Se alguma assinatura de risco for identificada, o detector bloqueia imediatamente o processamento, lançando uma exceção de segurança controlada e impedindo que a query chegue às camadas de banco de dados.
+Analisador de assinaturas que inspeciona strings antes do processamento, detectando padrões como:
+
+- `UNION SELECT …`
+- Comentários SQL: `--` ou `/* */`
+- Tautologias: `' OR '1'='1`
+- Comandos empilhados: `; DROP TABLE`, `; UPDATE`, `; DELETE`
+- Injeções temporais: `WAITFOR DELAY`, `SLEEP()`
+
+#### Uso estático (comportamento padrão compartilhado)
+
+```typescript
+import { SqlInjectionDetector } from '@raicampos/query-toolkit';
+
+// Apenas detecta (retorna boolean)
+SqlInjectionDetector.detect("' OR 1=1"); // true
+
+// Detecta e avisa (console.warn por padrão)
+SqlInjectionDetector.detectAndWarn(userInput);
+
+// Modo estrito: lança Error em vez de logar
+SqlInjectionDetector.configure({ strictMode: true });
+```
+
+#### Uso por instância (configuração isolada por módulo)
+
+Para isolar a configuração entre módulos diferentes — por exemplo, modo estrito em produção e permissivo em testes — instancie diretamente:
+
+```typescript
+const strictDetector = new SqlInjectionDetector({ strictMode: true });
+const loggingDetector = new SqlInjectionDetector({
+  strictMode: false,
+  logger: myLogger, // substitui console.warn
+});
+
+strictDetector.detectAndWarn(value);   // lança Error
+loggingDetector.detectAndWarn(value);  // delega ao logger customizado
+```
 
 ---
 
-## 2. 🚦 Limites de Segurança e Exaustão de Recursos
+## 2. 🚦 Limites contra Exaustão de Recursos
 
-Consultas dinâmicas excessivamente grandes podem derrubar bancos de dados de produção ou consumir toda a memória disponível na CPU do servidor (Denial of Service). 
-
-Para evitar isso, o `SqlBuilder` possui limites de segurança pré-configurados que você pode ajustar conforme o perfil do seu ambiente:
+Consultas dinâmicas sem restrições podem derrubar bancos em produção. O `SqlBuilder` possui limites configuráveis:
 
 ```typescript
-import { SqlBuilder } from '@raicampos/uery-toolkit';
+import { SqlBuilder } from '@raicampos/query-toolkit';
 
 const builder = new SqlBuilder('users', undefined, {
-  maxWhereClauses: 30,    // Impede o envio de mais de 30 condições WHERE aninhadas
-  maxOrderByClauses: 5,   // Limita ordenações a no máximo 5 colunas simultâneas
-  maxLimit: 100,          // Impede queries sem paginação ou com LIMIT excessivamente alto (ex: LIMIT 50000)
+  maxWhereClauses: 30,   // máximo de condições WHERE aninhadas
+  maxOrderByClauses: 5,  // máximo de colunas para ordenação simultânea
+  maxLimit: 100,         // limite máximo de linhas por consulta
 });
 ```
 
-Se a requisição de API estourar qualquer um desses limites, uma exceção explícita será gerada em tempo de execução (**Fail-Fast**).
+Se qualquer limite for ultrapassado, uma exceção explícita é lançada (**Fail-Fast**) antes de onerar o banco.
 
 ---
 
-## 💡 Melhores Práticas Recomendadas
+## 💡 Melhores Práticas
 
-1. **Sempre use `build()`**: Nunca utilize o método `.build()` cru em queries construídas com entradas diretas da URL em ambientes de produção. O método `.build()` concatena os valores e deve ser reservado para depuração local ou scripts internos confiáveis.
-2. **Valide as entradas nas suas APIs**: Valide os query parameters de entrada com a ferramenta de sua preferência antes de passá-los para o parser do RSQL. Isso fornece uma camada adicional de validação sintática e restrição de tipos.
-3. **Limite o tamanho de string na URL**: Configure os middlewares do seu servidor web (Fastify, Express, NestJS) para rejeitar payloads de URL excessivamente longos (acima de 2048 caracteres).
+1. **Use sempre queries parametrizadas**: nunca concatene `params` diretamente no SQL em produção — passe `sql` e `params` separados para o driver do banco.
+2. **Valide inputs nas APIs**: use `QueryParamsParse.validate()` antes de processar filtros recebidos da URL.
+3. **Prefira instâncias de `SqlInjectionDetector` em ambientes isolados**: o método estático `configure()` altera o estado global — em aplicações com múltiplos módulos, prefira `new SqlInjectionDetector({ ... })`.
+4. **Limite o tamanho da URL**: configure middlewares (Fastify, Express, NestJS) para rejeitar payloads acima de 2048 caracteres.

@@ -42,7 +42,9 @@ describe('validateParams', () => {
     const result = validateParams<TestUser>(operatorsObj, validKeys);
     expect(result.success).toBe(false);
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain("expected type 'number'");
+    expect(result.errors[0].field).toBe('age');
+    expect(result.errors[0].code).toBe('INVALID_TYPE');
+    expect(result.errors[0].message).toContain("tipo esperado: 'number'");
   });
 
   it('deve validar arrays de valores correspondentes', () => {

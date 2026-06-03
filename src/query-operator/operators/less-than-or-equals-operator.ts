@@ -4,7 +4,7 @@ import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
 import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
 
-export class LessThanOrEqualOperator extends QueryParamsOperator<
+export class LessThanOrEqualsOperator extends QueryParamsOperator<
   LessThanOrEqualsCondition<number | Date>,
   number | Date
 > {

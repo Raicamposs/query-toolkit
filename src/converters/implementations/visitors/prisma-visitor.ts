@@ -9,35 +9,39 @@ import type { GreaterThanOperator } from '../../../query-operator/operators/grea
 import type { GreaterThanOrEqualsOperator } from '../../../query-operator/operators/greater-than-or-equals-operator';
 import type { InOperator } from '../../../query-operator/operators/in-operator';
 import type { LessThanOperator } from '../../../query-operator/operators/less-than-operator';
-import type { LessThanOrEqualOperator } from '../../../query-operator/operators/less-than-or-equals-operator';
+import type { LessThanOrEqualsOperator } from '../../../query-operator/operators/less-than-or-equals-operator';
 import type { NotContainsOperator } from '../../../query-operator/operators/not-contains-operator';
 import type { NotEqualsOperator } from '../../../query-operator/operators/not-equals-operator';
 import type { NotInOperator } from '../../../query-operator/operators/not-in-operator';
 import type { UnknownOperator } from '../../../query-operator/operators/unknown-operator';
-import type { OperatorVisitor } from '../../core/operator-visitor';
+import type { PrimitiveValueType } from '../../../common/types/primitive-value';
+import { BaseOperatorVisitor } from '../../core/base-operator-visitor';
+import { UnsupportedOperatorError } from '../../core/unsupported-operator-error';
+
+export type PrismaScalar = PrimitiveValueType | null | undefined;
 
 export type PrismaWhereValue =
-  | unknown
-  | { not: unknown }
-  | { in: unknown[] }
-  | { notIn: unknown[] }
-  | { gt: unknown }
-  | { gte: unknown }
-  | { lt: unknown }
-  | { lte: unknown }
+  | PrismaScalar
+  | { not: PrismaScalar }
+  | { in: PrimitiveValueType[] }
+  | { notIn: PrimitiveValueType[] }
+  | { gt: number | Date | null | undefined }
+  | { gte: number | Date | null | undefined }
+  | { lt: number | Date | null | undefined }
+  | { lte: number | Date | null | undefined }
   | { contains: string; mode: 'insensitive' }
   | { not: { contains: string; mode: 'insensitive' } }
-  | { gte: unknown; lte: unknown }
-  | { hasEvery: unknown[] }
-  | { hasSome: unknown[] }
-  | { has: unknown };
+  | { gte: number | Date; lte: number | Date }
+  | { hasEvery: PrimitiveValueType[] }
+  | { hasSome: PrimitiveValueType[] }
+  | { has: PrismaScalar };
 
 export type PrismaWhereClause = Record<string, PrismaWhereValue>;
 
 /**
  * Visitor implementation that converts QueryParamsOperator to Prisma where clauses
  */
-export class PrismaVisitor implements OperatorVisitor<PrismaWhereClause> {
+export class PrismaVisitor extends BaseOperatorVisitor<PrismaWhereClause> {
   visitEquals(operator: EqualsOperator, field: string): PrismaWhereClause {
     return { [field]: operator.value() };
   }
@@ -69,7 +73,7 @@ export class PrismaVisitor implements OperatorVisitor<PrismaWhereClause> {
     return { [field]: { lt: operator.value() } };
   }
 
-  visitLessThanOrEquals(operator: LessThanOrEqualOperator, field: string): PrismaWhereClause {
+  visitLessThanOrEquals(operator: LessThanOrEqualsOperator, field: string): PrismaWhereClause {
     return { [field]: { lte: operator.value() } };
   }
 
@@ -96,18 +100,11 @@ export class PrismaVisitor implements OperatorVisitor<PrismaWhereClause> {
   visitBetween(operator: BetweenOperator, field: string): PrismaWhereClause {
     const value = operator.value();
 
-    if (!value || typeof value !== 'object' || !('gte' in value) || !('lte' in value)) {
-      throw new Error(
-        `Invalid value for Between operator on field "${field}". Expected an object with gte and lte.`
-      );
+    if (!value) {
+      throw new Error(`Invalid value for Between operator on field "${field}".`);
     }
 
-    return {
-      [field]: {
-        gte: value.gte,
-        lte: value.lte,
-      },
-    };
+    return { [field]: { gte: value.gte, lte: value.lte } };
   }
 
   visitArrayContains(operator: ArrayContainsOperator, field: string): PrismaWhereClause {
@@ -121,9 +118,7 @@ export class PrismaVisitor implements OperatorVisitor<PrismaWhereClause> {
   }
 
   visitArrayIsContainedBy(_operator: ArrayIsContainedByOperator, field: string): PrismaWhereClause {
-    throw new Error(
-      `The "is contained by" array operator is not natively supported by Prisma on field "${field}". Use raw query execution instead.`
-    );
+    throw new UnsupportedOperatorError('<@', field);
   }
 
   visitArrayOverlap(operator: ArrayOverlapOperator, field: string): PrismaWhereClause {

@@ -1,3 +1,3 @@
-export interface IQueryParamsConverter<Parmas> {
-  build(): Record<string, Parmas>;
+export interface IQueryParamsConverter<TResult> {
+  build(): Record<string, TResult>;
 }

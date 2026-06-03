@@ -20,7 +20,7 @@ Servidor HTTP construído com **Fastify + Prisma + PostgreSQL (Docker)** que dem
 | PostgreSQL | 16 | Banco de dados via Docker Compose |
 | TypeScript | 5 (strict) | Linguagem |
 | node-pg | 8 | Cliente PostgreSQL nativo |
-| @raicampos/query-toolkit | 1.0.0 | Biblioteca principal |
+| @raicampos/query-toolkit | 1.1.3+ | Biblioteca principal |
 
 ---
 
@@ -341,70 +341,101 @@ Esta interface permite testar em tempo real:
 ### 1. `RsqlStringParser` + `QueryParamsParse`
 
 ```typescript
-// src/pipes/rsql.pipe.ts
-import { RsqlStringParser, QueryParamsParse } from '@raicampos/query-toolkit/rsql-parse';
+import { RsqlStringParser, QueryParamsParse } from '@raicampos/query-toolkit';
 
-const rawParams = new RsqlStringParser("roast==DARK;price=lte=50").parse();
-// { roast: "==DARK", price: "=lte=50" }
+const rawParams = new RsqlStringParser('roast==DARK;price=lte=50').parse();
+// { roast: '==DARK', price: 'lte=50' }
 
-const operators = new QueryParamsParse(rawParams).build();
-// { roast: [EqualsOperator], price: [LessThanOrEqualOperator] }
+const { operators } = new QueryParamsParse(rawParams);
+// { roast: [EqualsOperator], price: [LessThanOrEqualsOperator] }
 ```
 
-### 2. `QueryParamsPrismaConverter` & `QueryParamsSqlConverter`
+### 2. Validação com erros estruturados (`validateOrThrow`)
+
+O controller usa `validateOrThrow()` que lança `ValidationException` ao detectar erros.
+A resposta HTTP expõe `ValidationError[]` com `field`, `code` e `message`.
 
 ```typescript
-import { QueryParamsPrismaConverter, QueryParamsSqlConverter } from '@raicampos/query-toolkit/converters';
+// src/coffee/coffee.controller.ts
+import { QueryParamsParse, ValidationException } from '@raicampos/query-toolkit';
 
-// Para o Prisma: gera o objeto where aninhado dinâmico
-const prismaWhere = new QueryParamsPrismaConverter(operators).build();
+const queryParams = new QueryParamsParse<Coffee>(query, {
+  price: {
+    type: 'number',
+    validate: [
+      (v) => v >= 0     || 'O preço não pode ser negativo',
+      (v) => v <= 10000 || 'O preço excede o limite (10000)',
+    ],
+  },
+  tags: 'string[]',  // FieldTypes aceita array variants
+});
 
-// Para o SQL Nativo / SqlBuilder: gera um Record<string, Clause[]>
-const sqlClauses = new QueryParamsSqlConverter(operators).build();
+queryParams.validateOrThrow(); // lança ValidationException se inválido
 ```
 
-### 3. `SqlBuilder`
+A resposta de erro tem o formato:
+```json
+{
+  "error": "Validation Error",
+  "details": [
+    { "field": "price", "code": "CUSTOM_VALIDATION_FAILED", "message": "O preço não pode ser negativo" }
+  ]
+}
+```
+
+### 3. `QueryParamsPrismaConverter`, `QueryParamsSqlConverter` e `QueryParamsSqlStringConverter`
+
+```typescript
+import {
+  QueryParamsPrismaConverter,
+  QueryParamsSqlConverter,
+  QueryParamsSqlStringConverter,
+} from '@raicampos/query-toolkit';
+
+// Para o Prisma: gera o objeto where tipado (Record<string, PrismaWhereValue>)
+const where = new QueryParamsPrismaConverter(operators).build();
+// { roast: 'DARK', price: { lte: 50 } }
+
+// Para o SqlBuilder: gera cláusulas parametrizadas (Record<string, Clause[]>)
+const clauses = new QueryParamsSqlConverter(operators).build();
+
+// Para string SQL direta (com valores escapados, sem parâmetros)
+const converter = new QueryParamsSqlStringConverter(operators);
+const where   = converter.build();            // "roast = 'DARK' AND price <= 50"
+const orderBy = converter.sort({ price: 'asc' }); // "price ASC"
+const { where: w, orderBy: o } = converter.buildQuery({ price: 'asc' }); // em uma chamada
+```
+
+### 4. `SqlBuilder`
 
 ```typescript
 // src/coffee/repositories/coffee-pg.repository.ts
-import { SqlBuilder, QueryParamsSqlConverter } from '@raicampos/query-toolkitt';
+import { SqlBuilder, QueryParamsSqlConverter } from '@raicampos/query-toolkit';
 
-// 1. Gera e junta todas as cláusulas lógicas em uma lista única
 const converter = new QueryParamsSqlConverter(filters);
-const clauses = Object.values(converter.build()).flat();
+const clauses = converter.build();
 
-// 2. Alimenta o builder fluente
-const builder = SqlBuilder.from<Coffee>('coffee')
-  .whereClauses(clauses)
-  .addLimit(20)
-  .addOffset(0);
+const builder = SqlBuilder.from<Coffee>('coffee');
+for (const fieldClauses of Object.values(clauses)) {
+  builder.whereClauses(fieldClauses);
+}
 
 const { sql, params } = builder.build();
-// sql: "SELECT * FROM coffee WHERE (roast = $1) AND (price <= $2) LIMIT 20"
+// sql:    "SELECT * FROM coffee WHERE (roast = $1) AND (price <= $2)"
 // params: ["DARK", 50]
 ```
 
-### 4. `MapperBuilder`
+### 5. `MapperBuilder`
 
 ```typescript
 // src/coffee/repositories/coffee-mapper.ts
-import { MapperBuilder } from '@raicampos/query-toolkit/mappers';
+import { MapperBuilder } from '@raicampos/query-toolkit';
 
-export const coffeeMapping = {
-  id: 'id',
-  name: 'name',
-  origin: 'origin',
-  roast: 'roast',
-  flavor: 'flavor',
-  price: 'price',
-  available: 'available',
-  tags: 'tags',
-  createdAt: 'createdAt',
-} as const;
-
-// Criado em conformidade com o encapsulamento de domínio (Interface Adapter)
-const mapper = new MapperBuilder<PrismaCoffee, Coffee>(coffeeMapping)
-  .convertDateToIso('createdAt');
+const mapper = new MapperBuilder<PrismaCoffee, Coffee>({
+  id: 'id', name: 'name', origin: 'origin',
+  roast: 'roast', flavor: 'flavor', price: 'price',
+  available: 'available', tags: 'tags', createdAt: 'createdAt',
+}).convertDateToIso('createdAt');
 
 const domainCoffee = mapper.modelToEntity(prismaCoffee);
 ```

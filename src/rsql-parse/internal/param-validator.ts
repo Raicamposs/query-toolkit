@@ -1,33 +1,33 @@
 import { ObjectEntries } from '@raicampos/toolkit';
 import {
-  QueryableFields,
-  ParamsOperators,
-  FieldTypes,
-  CustomValidators,
   CustomValidatorFn,
+  CustomValidators,
+  FieldTypes,
+  ParamsOperators,
+  QueryableFields,
+  ValidationError,
+  ValidationResult,
 } from '../../common/types';
 import { QueryParamsOperator } from '../../query-operator';
 
 /**
- * Valida se os operadores analisados correspondem aos tipos especificados na forma (shape) definida,
- * além de rodar quaisquer validadores customizados providos.
- * @param operatorsObj Objeto com os operadores mapeados por campo.
- * @param validKeys Mapeamento de chaves válidas e seus respectivos tipos.
- * @param customValidators Mapeamento opcional de funções validadoras adicionais por campo.
- * @returns Um objeto indicando o sucesso e uma lista de erros, se existirem.
+ * Valida os operadores analisados contra o schema definido e executa validadores customizados.
+ * Retorna um `ValidationResult` com erros estruturados por campo, código e mensagem.
  */
 export function validateParams<T extends object>(
   operatorsObj: ParamsOperators<T>,
   validKeys: Map<QueryableFields<T>, FieldTypes>,
   customValidators?: CustomValidators<T>
-): { success: boolean; errors: string[] } {
-  const validationErrors: string[] = [];
+): ValidationResult {
+  const errors: ValidationError[] = [];
 
   for (const [field, operators] of ObjectEntries(operatorsObj)) {
     const fieldKey = field as QueryableFields<T>;
+
     if (validKeys.size > 0 && !validKeys.has(fieldKey)) {
       continue;
     }
+
     const expectedType = validKeys.get(fieldKey);
     const customValidator = customValidators?.[fieldKey];
 
@@ -35,7 +35,11 @@ export function validateParams<T extends object>(
       const parseResult = operator.safeParse();
 
       if (!parseResult.success) {
-        validationErrors.push(`Field '${field}': ${parseResult.error}`);
+        errors.push({
+          field: String(field),
+          message: parseResult.error,
+          code: 'SAFE_PARSE_FAILED',
+        });
         continue;
       }
 
@@ -45,9 +49,7 @@ export function validateParams<T extends object>(
         const baseType = expectedType.replace('[]', '');
 
         const checkType = (v: unknown) => {
-          if (baseType === 'date') {
-            return v instanceof Date;
-          }
+          if (baseType === 'date') return v instanceof Date;
           return typeof v === baseType;
         };
 
@@ -56,7 +58,11 @@ export function validateParams<T extends object>(
           : !checkType(value);
 
         if (isInvalid) {
-          validationErrors.push(`Field '${field}': expected type '${expectedType}'.`);
+          errors.push({
+            field: String(field),
+            message: `tipo esperado: '${expectedType}'`,
+            code: 'INVALID_TYPE',
+          });
           continue;
         }
       }
@@ -68,14 +74,26 @@ export function validateParams<T extends object>(
               value as T[QueryableFields<T>],
               operator as QueryParamsOperator<unknown, T[QueryableFields<T>]>
             );
+
             if (result === false) {
-              validationErrors.push(`Field '${field}': validation failed.`);
+              errors.push({
+                field: String(field),
+                message: 'validação falhou',
+                code: 'CUSTOM_VALIDATION_FAILED',
+              });
             } else if (typeof result === 'string') {
-              validationErrors.push(`Field '${field}': ${result}`);
+              errors.push({
+                field: String(field),
+                message: result,
+                code: 'CUSTOM_VALIDATION_FAILED',
+              });
             }
           } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            validationErrors.push(`Field '${field}': ${message}`);
+            errors.push({
+              field: String(field),
+              message: err instanceof Error ? err.message : String(err),
+              code: 'CUSTOM_VALIDATION_FAILED',
+            });
           }
         };
 
@@ -88,8 +106,5 @@ export function validateParams<T extends object>(
     }
   }
 
-  return {
-    success: validationErrors.length === 0,
-    errors: validationErrors,
-  };
+  return { success: errors.length === 0, errors };
 }

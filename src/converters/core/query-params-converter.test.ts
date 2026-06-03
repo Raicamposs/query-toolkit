@@ -10,7 +10,7 @@ import {
   GreaterThanOrEqualsOperator,
   InOperator,
   LessThanOperator,
-  LessThanOrEqualOperator,
+  LessThanOrEqualsOperator,
   NotContainsOperator,
   NotEqualsOperator,
   NotInOperator,

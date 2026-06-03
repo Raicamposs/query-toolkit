@@ -5,12 +5,12 @@ import { QueryParamsOperator } from '../../../query-operator';
 import { QueryParamsConverter } from '../../core/query-params-converter';
 import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
 import { ISortConverter } from '../../core/sort-converter-interface';
-import { PrismaVisitor, PrismaWhereClause } from '../visitors/prisma-visitor';
+import { PrismaVisitor, PrismaWhereClause, PrismaWhereValue } from '../visitors/prisma-visitor';
 
 export type PrismaOrderByClause = Array<Record<string, SortDirection>>;
 
 export class QueryParamsPrismaConverter<T = unknown>
-  implements IQueryParamsConverter<unknown>, ISortConverter<PrismaOrderByClause>
+  implements IQueryParamsConverter<PrismaWhereValue>, ISortConverter<PrismaOrderByClause>
 {
   private converter: QueryParamsConverter<T>;
   private visitor: PrismaVisitor;
@@ -33,9 +33,9 @@ export class QueryParamsPrismaConverter<T = unknown>
     }));
   }
 
-  build(): Record<string, unknown> {
+  build(): Record<string, PrismaWhereValue> {
     const converted = this.converter.to(this.visitor);
-    const mergedResult: Record<string, unknown> = {};
+    const mergedResult: Record<string, PrismaWhereValue> = {};
 
     for (const [field, clauses] of Object.entries(converted)) {
       if (clauses.length === 0) continue;
@@ -52,7 +52,7 @@ export class QueryParamsPrismaConverter<T = unknown>
   }
 
   private mergePrismaFieldClauses(
-    target: Record<string, unknown>,
+    target: Record<string, PrismaWhereValue>,
     field: string,
     clauses: PrismaWhereClause[]
   ): void {
@@ -66,6 +66,11 @@ export class QueryParamsPrismaConverter<T = unknown>
       return;
     }
 
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[query-toolkit] Multiple scalar conditions for field "${field}": only the last will apply. ` +
+        `Consider using "in=" for multi-value equality.`
+    );
     target[field] = values[values.length - 1];
   }
 }

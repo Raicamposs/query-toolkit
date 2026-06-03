@@ -1,4 +1,4 @@
-import { CursorPage, QueryParamsParse } from '@raicampos/query-toolkit';
+import { CursorPage, QueryParamsParse, ValidationException } from '@raicampos/query-toolkit';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { CoffeeContainer } from './coffee.container';
@@ -57,17 +57,11 @@ export class CoffeeController {
         roast: 'string',
         flavor: 'string',
         available: 'boolean',
-        tags: 'string',
+        tags: 'string[]',
       });
 
-      const validationResult = queryParams.validate();
-      if (!validationResult.success) {
-        return reply.status(400).send({
-          error: 'Validation Error',
-          message: 'Erros de validação nos parâmetros de busca',
-          details: validationResult.errors,
-        });
-      }
+      // validateOrThrow() lança ValidationException se houver erros — tratado em handleError()
+      queryParams.validateOrThrow();
 
       const pagination = queryParams.paginationAsCursorPage(new CursorPage(20));
 
@@ -138,6 +132,16 @@ export class CoffeeController {
       return reply.status(400).send({
         error: 'Bad Request',
         message: error.message,
+      });
+    }
+
+    // ValidationException vem de queryParams.validateOrThrow()
+    // errors é ValidationError[] — objetos estruturados com { field, message, code }
+    if (error instanceof ValidationException) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Erros de validação nos parâmetros de busca',
+        details: error.errors,
       });
     }
 
