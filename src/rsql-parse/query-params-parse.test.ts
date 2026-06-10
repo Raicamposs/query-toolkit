@@ -225,6 +225,27 @@ describe('QueryParamsParse', () => {
       expect(parser6.validate().success).toBe(true);
       expect(parser6.asRsqlOperatorsObject().name).toEqual({ equals: 'S' });
     });
+
+    it('deve normalizar valores booleanos planos sem operador RSQL (S, N, T, F)', () => {
+      const shape = { isActive: 'boolean', name: 'string' } as const;
+
+      // Shorthands sem operador RSQL
+      const parserS = new QueryParamsParse<BooleanTest>({ isActive: 'S' }, shape);
+      expect(parserS.asRsqlOperatorsObject().isActive).toEqual({ equals: true });
+
+      const parserN = new QueryParamsParse<BooleanTest>({ isActive: 'N' }, shape);
+      expect(parserN.asRsqlOperatorsObject().isActive).toEqual({ equals: false });
+
+      const parserT = new QueryParamsParse<BooleanTest>({ isActive: 'T' }, shape);
+      expect(parserT.asRsqlOperatorsObject().isActive).toEqual({ equals: true });
+
+      const parserF = new QueryParamsParse<BooleanTest>({ isActive: 'F' }, shape);
+      expect(parserF.asRsqlOperatorsObject().isActive).toEqual({ equals: false });
+
+      // Não deve afetar campo de texto
+      const parserName = new QueryParamsParse<BooleanTest>({ name: 'S' }, shape);
+      expect(parserName.asRsqlOperatorsObject().name).toEqual({ equals: 'S' });
+    });
   });
 
   describe('Validação Personalizada (Custom Validators)', () => {

@@ -19,7 +19,7 @@ import type {
 } from '../common/types';
 import type { QueryParamsOperator } from '../query-operator';
 import { buildPagination } from './internal/pagination-builder';
-import { normalizeRsqlBooleanString } from './internal/param-normalizer';
+import { normalizePlainBoolean, normalizeRsqlBooleanString } from './internal/param-normalizer';
 import { validateParams } from './internal/param-validator';
 import { buildSort } from './internal/sort-builder';
 import { OperatorRegistry } from './operator-registry';
@@ -230,10 +230,9 @@ export class QueryParamsParse<T extends object> {
       const isBoolean = expectedType === 'boolean';
 
       const normalizeValue = (val: string): string => {
-        if (isBoolean) {
-          return normalizeRsqlBooleanString(val);
-        }
-        return val;
+        if (!isBoolean) return val;
+        const normalized = normalizeRsqlBooleanString(val);
+        return normalized !== val ? normalized : normalizePlainBoolean(val);
       };
 
       if (Array.isArray(value)) {

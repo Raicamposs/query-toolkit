@@ -1,6 +1,18 @@
 import { OPERATORS } from '../../common/types/operator-symbol';
 
 /**
+ * Normaliza um valor booleano puro (sem operador RSQL) para 'true' ou 'false'.
+ * Aceita: S, T, TRUE → 'true' | N, F, FALSE → 'false' (case-insensitive).
+ * Retorna o valor original se não for um booleano reconhecido.
+ */
+export function normalizePlainBoolean(value: string): string {
+  const v = value.trim().toUpperCase();
+  if (v === 'S' || v === 'T') return 'true';
+  if (v === 'N' || v === 'F') return 'false';
+  return value;
+}
+
+/**
  * Normaliza os valores de string booleanos vindos do RSQL para representações padronizadas.
  * Exemplo: '==S' ou '==TRUE' torna-se '==true'.
  * @param value Expressão de valor RSQL.

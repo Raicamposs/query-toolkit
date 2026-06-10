@@ -1,5 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeRsqlBooleanString } from './param-normalizer';
+import { normalizePlainBoolean, normalizeRsqlBooleanString } from './param-normalizer';
+
+describe('normalizePlainBoolean', () => {
+  it('deve converter S e T para "true"', () => {
+    expect(normalizePlainBoolean('S')).toBe('true');
+    expect(normalizePlainBoolean('T')).toBe('true');
+  });
+
+  it('deve converter N e F para "false"', () => {
+    expect(normalizePlainBoolean('N')).toBe('false');
+    expect(normalizePlainBoolean('F')).toBe('false');
+  });
+
+  it('deve ser case-insensitive', () => {
+    expect(normalizePlainBoolean('s')).toBe('true');
+    expect(normalizePlainBoolean('n')).toBe('false');
+  });
+
+  it('deve retornar o valor original quando não for booleano reconhecido', () => {
+    expect(normalizePlainBoolean('texto')).toBe('texto');
+    expect(normalizePlainBoolean('1')).toBe('1');
+    expect(normalizePlainBoolean('')).toBe('');
+  });
+});
 
 describe('normalizeRsqlBooleanString', () => {
   it('deve retornar o valor original se nao houver operador correspondente', () => {
