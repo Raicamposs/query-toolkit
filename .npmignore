@@ -1,27 +1,10 @@
-# Diretórios que não devem ser publicados
-src/
-coverage/
-exemplo/
-.github/
-.instructions/
-.agent/
-.vscode/
-.husky/
+# O campo "files" no package.json já define o allowlist (dist, README.md, LICENSE).
+# Este arquivo exclui arquivos específicos dentro de dist/ por segurança.
 
-# Arquivos de configuração de desenvolvimento
-*.test.ts
-*.spec.ts
-vitest.config.ts
-tsconfig.json
-eslint.config.mjs
-commitlint.config.js
-.prettierrc
-.prettierignore
-.gitattributes
-.gitignore
-
-# Arquivos de testes distribuídos (gerados pelo tsc)
+# Arquivos de teste compilados (não devem existir, mas como fallback)
 dist/**/*.test.js
 dist/**/*.test.d.ts
+dist/**/*.test.d.ts.map
 dist/**/*.spec.js
 dist/**/*.spec.d.ts
+dist/**/*.spec.d.ts.map

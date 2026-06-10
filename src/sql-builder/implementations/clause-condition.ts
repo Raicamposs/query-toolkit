@@ -1,9 +1,10 @@
-import { isNullOrUndefined, Nullable } from '@raicampos/toolkit';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { Nullable } from '@raicampos/toolkit';
+import { isNullOrUndefined } from '@raicampos/toolkit';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 import { Clause } from '../core/clause';
 import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
 import { SqlPrimitiveValue } from '../core/sql-primitive-value';
-import { TransformFunction } from '../core/transform-function';
+import type { TransformFunction } from '../core/transform-function';
 
 /**
  * All recognized operator keys for the Condition type.

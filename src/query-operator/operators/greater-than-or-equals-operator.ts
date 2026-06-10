@@ -1,8 +1,9 @@
-import { Nullable } from '@raicampos/toolkit';
-import { GreaterThanOrEqualsCondition } from '../../common/types';
+import type { Nullable } from '@raicampos/toolkit';
+import type { GreaterThanOrEqualsCondition } from '../../common/types';
 import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
-import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
+import type { QueryParamsOperatorSafeParse } from '../query-params-operator';
+import { QueryParamsOperator } from '../query-params-operator';
 
 export class GreaterThanOrEqualsOperator extends QueryParamsOperator<
   GreaterThanOrEqualsCondition<number | Date>,

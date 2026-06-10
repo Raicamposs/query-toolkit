@@ -1,6 +1,7 @@
 import { ObjectEntries } from '@raicampos/toolkit';
-import { SortDirection, SortParser } from '../../common';
-import { QueryableFields } from '../../common/types';
+import type { SortDirection } from '../../common';
+import { SortParser } from '../../common';
+import type { QueryableFields } from '../../common/types';
 
 /**
  * Constrói o mapeamento de ordenação a partir dos parâmetros de ordenação da query.

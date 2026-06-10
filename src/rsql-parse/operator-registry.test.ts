@@ -1,7 +1,7 @@
-import { Nullable } from '@raicampos/toolkit';
+import type { Nullable } from '@raicampos/toolkit';
 import { describe, expect, it } from 'vitest';
-import { RsqlCondition } from '../common/types';
-import { OperatorVisitor } from '../converters';
+import type { RsqlCondition } from '../common/types';
+import type { OperatorVisitor } from '../converters';
 import { EqualsOperator, QueryParamsOperator } from '../query-operator';
 import { OperatorRegistry, parseRsqlListValue } from './operator-registry';
 

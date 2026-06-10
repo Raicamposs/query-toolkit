@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CursorCodec, CursorPayload } from './cursor-codec';
+import type { CursorPayload } from './cursor-codec';
+import { CursorCodec } from './cursor-codec';
 
 describe('CursorCodec', () => {
   const payload: CursorPayload = {

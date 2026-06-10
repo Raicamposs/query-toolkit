@@ -1,7 +1,8 @@
 import { isEmpty } from '@raicampos/toolkit';
-import { Clause, ParameterizedQuery } from './clause';
+import type { ParameterizedQuery } from './clause';
+import { Clause } from './clause';
 
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 import { SqlPrimitiveValue } from './sql-primitive-value';
 
 export abstract class ClauseBase extends Clause {

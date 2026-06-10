@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { QueryableFields } from '../../common/types';
+import type { QueryableFields } from '../../common/types';
 import { buildSort } from './sort-builder';
 
 interface TestObject {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { OperatorVisitor } from '../../converters';
+import type { OperatorVisitor } from '../../converters';
 import { ArrayContainsOperator } from './array-contains-operator';
 
 describe('ArrayContainsOperator', () => {

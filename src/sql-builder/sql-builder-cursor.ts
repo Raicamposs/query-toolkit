@@ -1,6 +1,6 @@
-import { CursorPage } from '../common';
-import { QueryableFields } from '../common/types';
-import { SqlBuilder } from './sql-builder';
+import type { CursorPage } from '../common';
+import type { QueryableFields } from '../common/types';
+import type { SqlBuilder } from './sql-builder';
 
 export interface CursorParams {
   primaryKeyName: string;

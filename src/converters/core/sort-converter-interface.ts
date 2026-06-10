@@ -1,4 +1,4 @@
-import { SortDirection } from '../../common';
+import type { SortDirection } from '../../common';
 
 /**
  * Interface para conversores que transformam parâmetros de ordenação.

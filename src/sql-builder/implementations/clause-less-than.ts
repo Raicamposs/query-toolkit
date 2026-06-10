@@ -1,6 +1,6 @@
 import { isNullOrUndefined } from '@raicampos/toolkit';
 import { ClauseBase } from '../core/clause-base';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseLessThan extends ClauseBase {
   constructor(field: string, value: PrimitiveValueType) {

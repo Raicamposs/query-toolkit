@@ -1,6 +1,6 @@
-import { QueryableFields } from '../../common/types';
+import type { QueryableFields } from '../../common/types';
 import { QueryParamsOperator } from '../../query-operator';
-import { OperatorVisitor } from './operator-visitor';
+import type { OperatorVisitor } from './operator-visitor';
 
 type Operator<T> = Record<
   QueryableFields<T>,

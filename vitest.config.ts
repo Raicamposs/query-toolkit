@@ -5,18 +5,27 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      all: true,
+      include: ['src/**/*.ts'],
       exclude: [
         '**/node_modules/**',
         '**/dist/**',
         '**/coverage/**',
         '**/*.config.*',
-        '**/index.ts',           // Ignora todos os index.ts
-        '**/index.js',           // Ignora todos os index.js
-        '**/*.test.ts',          // Ignora arquivos de teste
-        '**/*.spec.ts',          // Ignora arquivos de spec
-        '**/*.d.ts',             // Ignora arquivos de declaração
+        '**/index.ts',
+        '**/index.js',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+        '**/*.d.ts',
       ],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 85,
+        statements: 90,
+      },
     },
   },
 });

@@ -14,7 +14,7 @@ import type { NotContainsOperator } from '../../../query-operator/operators/not-
 import type { NotEqualsOperator } from '../../../query-operator/operators/not-equals-operator';
 import type { NotInOperator } from '../../../query-operator/operators/not-in-operator';
 import type { UnknownOperator } from '../../../query-operator/operators/unknown-operator';
-import { PrimitiveValueType } from '../../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../../common/types/primitive-value';
 import { SqlPrimitiveValue } from '../../../sql-builder/core/sql-primitive-value';
 import { BaseOperatorVisitor } from '../../core/base-operator-visitor';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Mapper } from './mapper';
+import type { Mapper } from './mapper';
 import { MapperBuilder } from './mapper-builder';
 
 type Model = {

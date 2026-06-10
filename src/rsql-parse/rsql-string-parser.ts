@@ -1,4 +1,4 @@
-import { RsqlQueryParams } from '../common/types';
+import type { RsqlQueryParams } from '../common/types';
 import { OPERATORS } from '../common/types/operator-symbol';
 
 const WORD_CHAR_REGEX = /^[a-zA-Z0-9_]$/;

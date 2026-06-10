@@ -1,6 +1,8 @@
-import { Nullable } from '@raicampos/toolkit';
+import type { Nullable } from '@raicampos/toolkit';
 import { OperatorSymbol } from '../common/types/operator-symbol';
-import { PrimitiveValue, PrimitiveValueType } from '../common/types/primitive-value';
+import type { PrimitiveValueType } from '../common/types/primitive-value';
+import { PrimitiveValue } from '../common/types/primitive-value';
+import type { QueryParamsOperator } from '../query-operator';
 import {
   ArrayContainsOperator,
   ArrayIsContainedByOperator,
@@ -16,7 +18,6 @@ import {
   NotContainsOperator,
   NotEqualsOperator,
   NotInOperator,
-  QueryParamsOperator,
 } from '../query-operator';
 import { UnknownOperator } from '../query-operator/operators/unknown-operator';
 

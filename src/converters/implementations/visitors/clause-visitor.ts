@@ -14,7 +14,7 @@ import type { NotContainsOperator } from '../../../query-operator/operators/not-
 import type { NotEqualsOperator } from '../../../query-operator/operators/not-equals-operator';
 import type { NotInOperator } from '../../../query-operator/operators/not-in-operator';
 import type { UnknownOperator } from '../../../query-operator/operators/unknown-operator';
-import { Clause } from '../../../sql-builder/core/clause';
+import type { Clause } from '../../../sql-builder/core/clause';
 import {
   ClauseArrayContains,
   ClauseArrayIsContainedBy,

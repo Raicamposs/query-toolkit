@@ -1,7 +1,7 @@
 import { isEmpty } from '@raicampos/toolkit';
 import { Clause } from '../core/clause';
 import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseIn extends Clause {
   private readonly compareFields: SqlPrimitiveArrayValue;

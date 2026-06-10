@@ -1,5 +1,5 @@
 import { Clause } from '../core/clause';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 
 /**
  * Representa uma cláusula SQL crua e customizada, com suporte a parametrização segura.

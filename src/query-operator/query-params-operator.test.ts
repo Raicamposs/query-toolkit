@@ -1,7 +1,7 @@
-import { Nullable } from '@raicampos/toolkit';
+import type { Nullable } from '@raicampos/toolkit';
 import { describe, expect, it } from 'vitest';
-import { RsqlCondition } from '../common/types';
-import { OperatorVisitor } from '../converters';
+import type { RsqlCondition } from '../common/types';
+import type { OperatorVisitor } from '../converters';
 import { QueryParamsOperator } from './query-params-operator';
 
 // Criamos uma classe de mock concreta que herda de QueryParamsOperator para testar a base abstrata

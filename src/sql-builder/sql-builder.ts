@@ -1,12 +1,13 @@
-import { isNullOrUndefined, Nullable } from '@raicampos/toolkit';
-import { QueryableFields } from '../common/types';
-import { ParameterizedQuery } from './core/clause';
-import { SqlBuilderConfig } from './core/config';
+import type { Nullable } from '@raicampos/toolkit';
+import { isNullOrUndefined } from '@raicampos/toolkit';
+import type { QueryableFields } from '../common/types';
+import type { ParameterizedQuery } from './core/clause';
+import type { SqlBuilderConfig } from './core/config';
 import { SQL_BUILDER_CONSTANTS } from './core/constants';
 import { FilterBuilder } from './core/filter-builder';
 import { DuplicateJoinError, MaxClausesExceededError } from './core/sql-builder-errors';
 import { SQL_KEYWORDS } from './core/sql-keywords';
-import { PrimitiveValueType } from '../common/types/primitive-value';
+import type { PrimitiveValueType } from '../common/types/primitive-value';
 
 /** Internal representation of a SELECT column entry */
 interface SelectEntry {

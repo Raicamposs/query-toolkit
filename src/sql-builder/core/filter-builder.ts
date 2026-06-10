@@ -1,7 +1,7 @@
 import { isEmpty, isNullOrUndefined } from '@raicampos/toolkit';
-import { QueryableFields } from '../../common/types';
+import type { QueryableFields } from '../../common/types';
+import type { BetweenParam, SqlCondition } from '../implementations';
 import {
-  BetweenParam,
   ClauseAnd,
   ClauseArrayIsContainedBy,
   ClauseArrayOverlap,
@@ -25,14 +25,13 @@ import {
   ClauseNotIn,
   ClauseOr,
   ClauseRaw,
-  SqlCondition,
 } from '../implementations';
-import { Clause } from './clause';
-import { SqlBuilderConfig } from './config';
+import type { Clause } from './clause';
+import type { SqlBuilderConfig } from './config';
 import { SQL_BUILDER_CONSTANTS } from './constants';
 import { InvalidCursorError } from './sql-builder-errors';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
-import { TransformFunction } from './transform-function';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { TransformFunction } from './transform-function';
 
 export abstract class FilterBuilder<Table> {
   protected where: Clause[] = [];

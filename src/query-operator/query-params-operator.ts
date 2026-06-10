@@ -1,4 +1,5 @@
-import { isAssigned, isNullOrUndefined, Nullable } from '@raicampos/toolkit';
+import type { Nullable } from '@raicampos/toolkit';
+import { isAssigned, isNullOrUndefined } from '@raicampos/toolkit';
 import type { OperatorVisitor } from '../converters';
 
 export type QueryParamsOperatorSuccess<ValueType> = {

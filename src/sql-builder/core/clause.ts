@@ -1,6 +1,6 @@
-import { Nullable } from '@raicampos/toolkit';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
-import { TransformFunction } from './transform-function';
+import type { Nullable } from '@raicampos/toolkit';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { TransformFunction } from './transform-function';
 /**
  * Represents a SQL query with its parameters separated.
  */

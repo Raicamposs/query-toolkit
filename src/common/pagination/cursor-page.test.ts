@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CursorCodec, CursorPayload } from './cursor-codec';
+import type { CursorPayload } from './cursor-codec';
+import { CursorCodec } from './cursor-codec';
 import { CursorPage } from './cursor-page';
 
 type Row = { id: number; name: string };

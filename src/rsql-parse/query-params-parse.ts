@@ -1,6 +1,7 @@
 import { coalesce, isEmpty, ObjectEntries } from '@raicampos/toolkit';
-import { ClassicPage, CursorPage, SortDirection, SortParser } from '../common';
-import {
+import type { SortDirection } from '../common';
+import { ClassicPage, CursorPage, SortParser } from '../common';
+import type {
   CustomValidatorFn,
   CustomValidators,
   FieldCondition,
@@ -16,7 +17,7 @@ import {
   ValidationErrorCode,
   ValidationResult,
 } from '../common/types';
-import { QueryParamsOperator } from '../query-operator';
+import type { QueryParamsOperator } from '../query-operator';
 import { buildPagination } from './internal/pagination-builder';
 import { normalizeRsqlBooleanString } from './internal/param-normalizer';
 import { validateParams } from './internal/param-validator';

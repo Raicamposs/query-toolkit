@@ -1,8 +1,8 @@
-import { SortDirection } from '../../../common';
-import { QueryableFields } from '../../../common/types';
-import { QueryParamsOperator } from '../../../query-operator';
+import type { SortDirection } from '../../../common';
+import type { QueryableFields } from '../../../common/types';
+import type { QueryParamsOperator } from '../../../query-operator';
 import { QueryParamsConverter } from '../../core/query-params-converter';
-import { ISortConverter } from '../../core/sort-converter-interface';
+import type { ISortConverter } from '../../core/sort-converter-interface';
 import { SqlStringVisitor } from '../visitors/sql-string-visitor';
 
 /**

@@ -1,4 +1,4 @@
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 
 /**
  * @typeParam T - The type of the input value

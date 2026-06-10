@@ -1,5 +1,5 @@
 import { coalesce, isAssigned, isNullOrUndefined, JSONConverter } from '@raicampos/toolkit';
-import { Mapper } from './mapper';
+import type { Mapper } from './mapper';
 
 export type PropertyConverter<Table, Entity, K extends keyof Entity> = (
   value: unknown,

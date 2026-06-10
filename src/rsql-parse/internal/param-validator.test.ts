@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EqualsOperator, GreaterThanOperator } from '../../query-operator';
 import { validateParams } from './param-validator';
-import { QueryableFields, ParamsOperators, FieldTypes } from '../../common/types';
+import type { QueryableFields, ParamsOperators, FieldTypes } from '../../common/types';
 
 interface TestUser {
   name: string;

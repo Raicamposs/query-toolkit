@@ -1,7 +1,7 @@
 import { isEmpty } from '@raicampos/toolkit';
 import { ClauseBase } from '../core/clause-base';
 import { SqlPrimitiveArrayValue } from '../core/sql-primitive-array-value';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export class ClauseArrayOverlap extends ClauseBase {
   private readonly arrayValue: SqlPrimitiveArrayValue;

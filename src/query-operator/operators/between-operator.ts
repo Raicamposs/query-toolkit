@@ -1,8 +1,9 @@
-import { Nullable } from '@raicampos/toolkit';
-import { BetweenCondition } from '../../common/types';
+import type { Nullable } from '@raicampos/toolkit';
+import type { BetweenCondition } from '../../common/types';
 import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
-import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
+import type { QueryParamsOperatorSafeParse } from '../query-params-operator';
+import { QueryParamsOperator } from '../query-params-operator';
 
 export class BetweenOperator extends QueryParamsOperator<
   BetweenCondition<number | Date>,

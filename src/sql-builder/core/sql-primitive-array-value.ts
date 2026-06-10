@@ -1,7 +1,8 @@
-import { isAssigned, Nullable } from '@raicampos/toolkit';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { Nullable } from '@raicampos/toolkit';
+import { isAssigned } from '@raicampos/toolkit';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 import { SqlPrimitiveValue } from './sql-primitive-value';
-import { TransformFunction } from './transform-function';
+import type { TransformFunction } from './transform-function';
 
 export class SqlPrimitiveArrayValue {
   private readonly value: Array<SqlPrimitiveValue>;

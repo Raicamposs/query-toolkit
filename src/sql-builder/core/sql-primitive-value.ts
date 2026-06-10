@@ -1,7 +1,8 @@
-import { isAssigned, isNullOrUndefined, Nullable } from '@raicampos/toolkit';
+import type { Nullable } from '@raicampos/toolkit';
+import { isAssigned, isNullOrUndefined } from '@raicampos/toolkit';
 import { SqlInjectionDetector } from '../../common/sql-injection-detector';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
-import { TransformFunction } from './transform-function';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { TransformFunction } from './transform-function';
 
 /**
  * Converts primitive values to SQL-safe strings with SQL injection protection

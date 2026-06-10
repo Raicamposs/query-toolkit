@@ -1,11 +1,12 @@
 import { isNullOrUndefined } from '@raicampos/toolkit';
-import { SortDirection } from '../../../common';
-import { QueryableFields } from '../../../common/types';
-import { QueryParamsOperator } from '../../../query-operator';
+import type { SortDirection } from '../../../common';
+import type { QueryableFields } from '../../../common/types';
+import type { QueryParamsOperator } from '../../../query-operator';
 import { QueryParamsConverter } from '../../core/query-params-converter';
-import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
-import { ISortConverter } from '../../core/sort-converter-interface';
-import { PrismaVisitor, PrismaWhereClause, PrismaWhereValue } from '../visitors/prisma-visitor';
+import type { IQueryParamsConverter } from '../../core/query-params-converter-interface';
+import type { ISortConverter } from '../../core/sort-converter-interface';
+import type { PrismaWhereClause, PrismaWhereValue } from '../visitors/prisma-visitor';
+import { PrismaVisitor } from '../visitors/prisma-visitor';
 
 export type PrismaOrderByClause = Array<Record<string, SortDirection>>;
 

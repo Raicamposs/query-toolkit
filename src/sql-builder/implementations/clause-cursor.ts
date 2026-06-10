@@ -1,6 +1,6 @@
-import { Nullable } from '@raicampos/toolkit';
+import type { Nullable } from '@raicampos/toolkit';
 import { Clause } from '../core/clause';
-import { PrimitiveValueType } from '../../common/types/primitive-value';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
 
 export interface CursorItem {
   column: string;

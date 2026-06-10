@@ -1,7 +1,9 @@
-import { ArrayContainsCondition } from '../../common/types';
-import { PrimitiveValue, PrimitiveValueType } from '../../common/types/primitive-value';
+import type { ArrayContainsCondition } from '../../common/types';
+import type { PrimitiveValueType } from '../../common/types/primitive-value';
+import { PrimitiveValue } from '../../common/types/primitive-value';
 import type { OperatorVisitor } from '../../converters';
-import { QueryParamsOperator, QueryParamsOperatorSafeParse } from '../query-params-operator';
+import type { QueryParamsOperatorSafeParse } from '../query-params-operator';
+import { QueryParamsOperator } from '../query-params-operator';
 
 export class ArrayContainsOperator extends QueryParamsOperator<
   ArrayContainsCondition,

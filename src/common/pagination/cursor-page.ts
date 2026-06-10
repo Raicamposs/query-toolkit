@@ -1,5 +1,6 @@
 import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT } from './classic-page';
-import { CursorCodec, CursorPayload } from './cursor-codec';
+import type { CursorPayload } from './cursor-codec';
+import { CursorCodec } from './cursor-codec';
 
 export class CursorPage {
   private readonly _limit: number;

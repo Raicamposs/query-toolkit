@@ -1,5 +1,5 @@
 import { ObjectEntries } from '@raicampos/toolkit';
-import {
+import type {
   CustomValidatorFn,
   CustomValidators,
   FieldTypes,
@@ -8,7 +8,7 @@ import {
   ValidationError,
   ValidationResult,
 } from '../../common/types';
-import { QueryParamsOperator } from '../../query-operator';
+import type { QueryParamsOperator } from '../../query-operator';
 
 /**
  * Valida os operadores analisados contra o schema definido e executa validadores customizados.

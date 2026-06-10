@@ -1,5 +1,5 @@
-import { RequireAtLeastOne } from '@raicampos/toolkit';
-import {
+import type { RequireAtLeastOne } from '@raicampos/toolkit';
+import type {
   ArrayContainsCondition,
   ArrayIsContainedByCondition,
   ArrayOverlapCondition,

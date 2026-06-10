@@ -1,4 +1,4 @@
-import { PrimitiveValueType } from './primitive-value';
+import type { PrimitiveValueType } from './primitive-value';
 
 export type EqualsCondition<T extends PrimitiveValueType> = {
   equals: T;

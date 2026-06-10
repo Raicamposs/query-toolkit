@@ -3,53 +3,59 @@
   "version": "1.1.4",
   "description": "Pacote de ferramentas para queries. RSQL, filtros, paginação e ordenação.",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./common": {
       "types": "./dist/common/index.d.ts",
-      "import": "./dist/common/index.js",
+      "import": "./dist/common/index.mjs",
       "require": "./dist/common/index.js"
     },
     "./converters": {
       "types": "./dist/converters/index.d.ts",
-      "import": "./dist/converters/index.js",
+      "import": "./dist/converters/index.mjs",
       "require": "./dist/converters/index.js"
     },
     "./mappers": {
       "types": "./dist/mappers/index.d.ts",
-      "import": "./dist/mappers/index.js",
+      "import": "./dist/mappers/index.mjs",
       "require": "./dist/mappers/index.js"
     },
     "./query-operator": {
       "types": "./dist/query-operator/index.d.ts",
-      "import": "./dist/query-operator/index.js",
+      "import": "./dist/query-operator/index.mjs",
       "require": "./dist/query-operator/index.js"
     },
     "./rsql-parse": {
       "types": "./dist/rsql-parse/index.d.ts",
-      "import": "./dist/rsql-parse/index.js",
+      "import": "./dist/rsql-parse/index.mjs",
       "require": "./dist/rsql-parse/index.js"
     },
     "./sql-builder": {
       "types": "./dist/sql-builder/index.d.ts",
-      "import": "./dist/sql-builder/index.js",
+      "import": "./dist/sql-builder/index.mjs",
       "require": "./dist/sql-builder/index.js"
     },
     "./types": {
       "types": "./dist/common/types/index.d.ts",
-      "import": "./dist/common/types/index.js",
+      "import": "./dist/common/types/index.mjs",
       "require": "./dist/common/types/index.js"
     }
   },
   "scripts": {
     "bump": "npm version patch",
-    "build": "tsc",
-    "prebuild": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "tsup",
     "prepublishOnly": "npm run build",
     "test": "vitest",
     "coverage": "vitest run --coverage",
@@ -67,9 +73,15 @@
     "pagination",
     "sort",
     "sql",
-    "builder"
+    "builder",
+    "typescript",
+    "sql-builder",
+    "sql-injection",
+    "type-safe",
+    "prisma",
+    "nestjs"
   ],
-  "author": "Raiane Campos <[EMAIL_ADDRESS]>",
+  "author": "Raiane Campos <raianejanu@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -83,7 +95,8 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18",
+    "npm": ">=9"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
@@ -98,6 +111,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
+    "tsup": "^8.5.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.54.0",
     "vitest": "^3.2.4"
@@ -107,7 +121,7 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings=0",
       "prettier --write"
     ],
     "src/**/*.{json,md}": [
@@ -118,5 +132,8 @@
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true
   }
 }

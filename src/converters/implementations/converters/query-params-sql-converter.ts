@@ -1,10 +1,10 @@
-import { SortDirection } from '../../../common';
-import { QueryableFields } from '../../../common/types';
-import { QueryParamsOperator } from '../../../query-operator';
-import { Clause } from '../../../sql-builder';
+import type { SortDirection } from '../../../common';
+import type { QueryableFields } from '../../../common/types';
+import type { QueryParamsOperator } from '../../../query-operator';
+import type { Clause } from '../../../sql-builder';
 import { QueryParamsConverter } from '../../core/query-params-converter';
-import { IQueryParamsConverter } from '../../core/query-params-converter-interface';
-import { ISortConverter } from '../../core/sort-converter-interface';
+import type { IQueryParamsConverter } from '../../core/query-params-converter-interface';
+import type { ISortConverter } from '../../core/sort-converter-interface';
 import { ClauseVisitor } from '../visitors/clause-visitor';
 
 export type SqlOrderByClause = Record<string, SortDirection>;

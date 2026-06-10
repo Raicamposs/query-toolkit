@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ClassicPage, CursorPage, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT } from '../common';
 import { EqualsOperator } from '../query-operator';
 import { OperatorRegistry } from './operator-registry';
-import { QueryParamsParse, QueryShapeSchema } from './query-params-parse';
+import type { QueryShapeSchema } from './query-params-parse';
+import { QueryParamsParse } from './query-params-parse';
 import { ValidationException } from './validation-exception';
 
 interface UserTest {
