@@ -60,10 +60,10 @@ jobs:
           node-version: "20.x"
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Deploy para NPMJS (com Provenance)
+      - name: Deploy para NPMJS
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance --ignore-scripts --loglevel=http
+        run: npm publish --access public --ignore-scripts --loglevel=http
 
       - name: Setup Auth para GitHub Packages
         uses: actions/setup-node@v4
