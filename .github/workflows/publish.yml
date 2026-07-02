@@ -45,11 +45,22 @@ jobs:
       - name: Atualizar npm (OIDC Trusted Publishing)
         run: npm install -g npm@latest
 
+      - name: Debug ambiente OIDC
+        run: |
+          echo "npm: $(npm --version)"
+          echo "node: $(node --version)"
+          echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG"
+          echo "--- .npmrc efetivo ---"
+          npm config get userconfig
+          cat "${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}" 2>/dev/null | sed -E 's/(_authToken=).*/\1REDACTED/' || echo "(sem userconfig .npmrc)"
+          echo "--- OIDC vars ---"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL set? ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+
       # NAO usar setup-node/registry-url aqui: ele grava _authToken placeholder
       # no .npmrc, e o npm tenta auth por token (invalido) em vez de OIDC.
       # Registry default ja e o npmjs (ver publishConfig no package.json).
       - name: Deploy para NPMJS (com Provenance)
-        run: npm publish --access public --provenance --ignore-scripts
+        run: npm publish --access public --provenance --ignore-scripts --loglevel=http
 
       - name: Setup Auth para GitHub Packages
         uses: actions/setup-node@v4
