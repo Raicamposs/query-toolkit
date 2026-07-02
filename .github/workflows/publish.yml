@@ -41,18 +41,13 @@ jobs:
       - name: Compilação (Build Artifacts)
         run: npm run build
 
-      - name: Setup Auth para NPMJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          registry-url: "https://registry.npmjs.org"
-          scope: "@raicampos"
-
       # OIDC Trusted Publishing exige npm >= 11.5.1 (node 20 traz npm 10)
       - name: Atualizar npm (OIDC Trusted Publishing)
         run: npm install -g npm@latest
 
-      # Sem NODE_AUTH_TOKEN: autentica via OIDC (Trusted Publisher configurado no npmjs)
+      # NAO usar setup-node/registry-url aqui: ele grava _authToken placeholder
+      # no .npmrc, e o npm tenta auth por token (invalido) em vez de OIDC.
+      # Registry default ja e o npmjs (ver publishConfig no package.json).
       - name: Deploy para NPMJS (com Provenance)
         run: npm publish --access public --provenance --ignore-scripts
 
