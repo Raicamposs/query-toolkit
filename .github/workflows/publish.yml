@@ -9,8 +9,6 @@ jobs:
   ci-and-publish:
     name: CI & Dual Registry Publish
     runs-on: ubuntu-latest
-    # Environment exigido pelo Trusted Publisher configurado no npmjs
-    environment: NPM_TOKEN
     permissions:
       contents: read
       packages: write
