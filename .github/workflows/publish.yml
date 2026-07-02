@@ -9,6 +9,8 @@ jobs:
   ci-and-publish:
     name: CI & Dual Registry Publish
     runs-on: ubuntu-latest
+    # Environment exigido pelo Trusted Publisher configurado no npmjs
+    environment: NPM_TOKEN
     permissions:
       contents: read
       packages: write
@@ -46,9 +48,12 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           scope: "@raicampos"
 
+      # OIDC Trusted Publishing exige npm >= 11.5.1 (node 20 traz npm 10)
+      - name: Atualizar npm (OIDC Trusted Publishing)
+        run: npm install -g npm@latest
+
+      # Sem NODE_AUTH_TOKEN: autentica via OIDC (Trusted Publisher configurado no npmjs)
       - name: Deploy para NPMJS (com Provenance)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance --ignore-scripts
 
       - name: Setup Auth para GitHub Packages

@@ -92,6 +92,7 @@
   },
   "homepage": "https://github.com/Raicamposs/query-toolkit#readme",
   "publishConfig": {
+    "registry": "https://registry.npmjs.org",
     "access": "public"
   },
   "engines": {
