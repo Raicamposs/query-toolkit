@@ -145,7 +145,7 @@ function accumulateFieldFilter(
  */
 export function parseRsqlString<T = unknown>(filter: string): RsqlQueryParams<T> {
   if (!filter) {
-    return {} as RsqlQueryParams<T>;
+    return {};
   }
 
   const result: Record<string, string | string[]> = {};

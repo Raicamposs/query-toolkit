@@ -244,7 +244,7 @@ export abstract class FilterBuilder<Table> {
   ): this {
     for (const [key, value] of Object.entries(values)) {
       if (!isNullOrUndefined(value)) {
-        this.whereCondition(key as QueryableFields<Table>, value as SqlCondition, transform);
+        this.whereCondition(key as QueryableFields<Table>, value, transform);
       }
     }
     return this;
@@ -311,9 +311,7 @@ export abstract class FilterBuilder<Table> {
     jsonValue: Record<string, unknown> | unknown[] | string | number | boolean
   ): this {
     const boundValue = typeof jsonValue === 'object' ? JSON.stringify(jsonValue) : jsonValue;
-    return this.andFilter(
-      new ClauseRaw(`${this.column(field)} @> ?`, [boundValue as PrimitiveValueType])
-    );
+    return this.andFilter(new ClauseRaw(`${this.column(field)} @> ?`, [boundValue]));
   }
 
   /**
@@ -350,9 +348,7 @@ export abstract class FilterBuilder<Table> {
       pathExpr += ` ${op} '${parts[i]}'`;
     }
 
-    return this.andFilter(
-      new ClauseRaw(`${pathExpr} ${operator} ?`, [value as PrimitiveValueType])
-    );
+    return this.andFilter(new ClauseRaw(`${pathExpr} ${operator} ?`, [value]));
   }
 
   /**

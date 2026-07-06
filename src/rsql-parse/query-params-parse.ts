@@ -2,7 +2,6 @@ import { coalesce, isEmpty, ObjectEntries } from '@raicampos/toolkit';
 import type { SortDirection } from '../common';
 import { ClassicPage, CursorPage, SortParser } from '../common';
 import type {
-  CustomValidatorFn,
   CustomValidators,
   FieldCondition,
   FieldTypes,
@@ -44,7 +43,7 @@ function parseSchema<T extends object>(
       const valDef = def as FieldValidationDefinition<unknown>;
       keys.set(fieldKey, valDef.type);
       if (valDef.validate) {
-        validators[fieldKey] = valDef.validate as CustomValidatorFn<T[QueryableFields<T>]>;
+        validators[fieldKey] = valDef.validate;
       }
     }
   }

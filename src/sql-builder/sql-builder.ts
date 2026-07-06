@@ -512,11 +512,7 @@ export class SqlBuilder<Table> extends FilterBuilder<Table> {
       columnMapper?: Partial<Record<string, string>>,
       config?: Partial<SqlBuilderConfig>
     ) => this;
-    const cloned = new constructor(
-      this.sql,
-      this.columnMapper as Partial<Record<string, string>>,
-      this.config
-    );
+    const cloned = new constructor(this.sql, this.columnMapper, this.config);
     cloned.where = [...this.where];
     cloned.order = [...this.order];
     cloned.group = [...this.group];

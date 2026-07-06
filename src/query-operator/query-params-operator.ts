@@ -13,8 +13,7 @@ export type QueryParamsOperatorError = {
 };
 
 export type QueryParamsOperatorSafeParse<ValueType> =
-  | QueryParamsOperatorSuccess<ValueType>
-  | QueryParamsOperatorError;
+  QueryParamsOperatorSuccess<ValueType> | QueryParamsOperatorError;
 
 export abstract class QueryParamsOperator<Condition, ValueType> {
   constructor(

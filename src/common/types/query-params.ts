@@ -45,20 +45,10 @@ export type QueryParams<T extends object> = {
 };
 
 export type FieldTypes =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'date'
-  | 'string[]'
-  | 'number[]'
-  | 'boolean[]'
-  | 'date[]';
+  'string' | 'number' | 'boolean' | 'date' | 'string[]' | 'number[]' | 'boolean[]' | 'date[]';
 
 export type ValidationErrorCode =
-  | 'INVALID_TYPE'
-  | 'SAFE_PARSE_FAILED'
-  | 'CUSTOM_VALIDATION_FAILED'
-  | 'INVALID_SORT_FIELD';
+  'INVALID_TYPE' | 'SAFE_PARSE_FAILED' | 'CUSTOM_VALIDATION_FAILED' | 'INVALID_SORT_FIELD';
 
 export type ValidationError = {
   field: string;
