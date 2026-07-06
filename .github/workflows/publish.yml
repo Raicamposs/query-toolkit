@@ -24,6 +24,10 @@ jobs:
           node-version: "22.x"
           cache: "npm"
 
+      # npm >= 11 necessário: lockfile gerado com npm 11 e OIDC Trusted Publishing exige >= 11.5.1
+      - name: Atualizar npm
+        run: npm install -g npm@latest
+
       - name: Instalar Dependências
         run: npm ci
 
@@ -38,10 +42,6 @@ jobs:
 
       - name: Compilação (Build Artifacts)
         run: npm run build
-
-      # OIDC Trusted Publishing exige npm >= 11.5.1
-      - name: Atualizar npm (OIDC Trusted Publishing)
-        run: npm install -g npm@latest
 
       # Autenticação via OIDC Trusted Publishing (sem token).
       # Requer Trusted Publisher configurado no npmjs.com apontando para publish.yml
