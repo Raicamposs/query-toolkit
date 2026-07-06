@@ -2,10 +2,5 @@
 # Este arquivo exclui arquivos específicos dentro de dist/ por segurança.
 
 # Arquivos de teste compilados (não devem existir, mas como fallback)
-dist/**/*.test.js
-dist/**/*.test.d.ts
-dist/**/*.test.d.ts.map
-dist/**/*.spec.js
-dist/**/*.spec.d.ts
-dist/**/*.spec.d.ts.map
-
+dist/**/*.test.*
+dist/**/*.spec.*
