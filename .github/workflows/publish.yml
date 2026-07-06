@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
           cache: "npm"
 
       - name: Instalar Dependências
@@ -39,20 +39,9 @@ jobs:
       - name: Compilação (Build Artifacts)
         run: npm run build
 
-      # OIDC Trusted Publishing exige npm >= 11.5.1 (node 20 traz npm 10)
+      # OIDC Trusted Publishing exige npm >= 11.5.1
       - name: Atualizar npm (OIDC Trusted Publishing)
         run: npm install -g npm@latest
-
-      - name: Debug ambiente OIDC
-        run: |
-          echo "npm: $(npm --version)"
-          echo "node: $(node --version)"
-          echo "NPM_CONFIG_USERCONFIG=$NPM_CONFIG_USERCONFIG"
-          echo "--- .npmrc efetivo ---"
-          npm config get userconfig
-          cat "${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}" 2>/dev/null | sed -E 's/(_authToken=).*/\1REDACTED/' || echo "(sem userconfig .npmrc)"
-          echo "--- OIDC vars ---"
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL set? ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
 
       # Autenticação via OIDC Trusted Publishing (sem token).
       # Requer Trusted Publisher configurado no npmjs.com apontando para publish.yml
@@ -62,7 +51,7 @@ jobs:
       - name: Setup Auth para GitHub Packages
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@raicampos"
 
