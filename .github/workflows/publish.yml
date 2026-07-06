@@ -54,15 +54,9 @@ jobs:
           echo "--- OIDC vars ---"
           echo "ACTIONS_ID_TOKEN_REQUEST_URL set? ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
 
-      - name: Setup Node.js para NPMJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          registry-url: 'https://registry.npmjs.org'
-
+      # Autenticação via OIDC Trusted Publishing (sem token).
+      # Requer Trusted Publisher configurado no npmjs.com apontando para publish.yml
       - name: Deploy para NPMJS
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --ignore-scripts --loglevel=http
 
       - name: Setup Auth para GitHub Packages
