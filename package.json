@@ -76,7 +76,6 @@
     "builder",
     "typescript",
     "sql-builder",
-    "sql-injection",
     "type-safe",
     "prisma",
     "nestjs"

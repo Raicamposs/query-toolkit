@@ -106,6 +106,30 @@ export class OperatorRegistry {
   }
 
   /**
+   * Extrai o símbolo do operador e o valor bruto a partir dos parâmetros RSQL.
+   * Útil para normalização de valores com base em schemas.
+   * @param params String RSQL completa (ex: "==Brazil", "=in=(1,2)").
+   */
+  static extractSymbolAndValue(params: string): { symbol: string; rawValue: string } {
+    let bestSymbol = '';
+
+    for (const symbol of resolvers.keys()) {
+      const isMatch = params.startsWith(symbol);
+      const isLongerMatch = symbol.length > bestSymbol.length;
+
+      if (isMatch && isLongerMatch) {
+        bestSymbol = symbol;
+      }
+    }
+
+    if (bestSymbol) {
+      return { symbol: bestSymbol, rawValue: params.substring(bestSymbol.length).trim() };
+    }
+
+    return { symbol: '', rawValue: params.trim() };
+  }
+
+  /**
    * Remove apenas os operadores custom (não-padrão) do Registry.
    * Prefira este método em teardowns de teste para não apagar os operadores built-in.
    */

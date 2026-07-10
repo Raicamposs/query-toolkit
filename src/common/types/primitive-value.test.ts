@@ -45,6 +45,23 @@ describe('PrimitiveValue', () => {
       expect(pv.isString()).toBe(true);
     });
 
+    it('should treat explicitly quoted strings as strings even if numeric', () => {
+      const pv1 = PrimitiveValue.converter("'123'");
+      expect(pv1.getValue()).toBe('123');
+      expect(pv1.isString()).toBe(true);
+      expect(pv1.isNumber()).toBe(false);
+
+      const pv2 = PrimitiveValue.converter('"456"');
+      expect(pv2.getValue()).toBe('456');
+      expect(pv2.isString()).toBe(true);
+      expect(pv2.isNumber()).toBe(false);
+
+      const pv3 = PrimitiveValue.converter('"true"');
+      expect(pv3.getValue()).toBe('true');
+      expect(pv3.isString()).toBe(true);
+      expect(pv3.isBoolean()).toBe(false);
+    });
+
     it('should handle null/undefined safely', () => {
       // @ts-expect-error testing invalid input
       const pv = PrimitiveValue.converter(null);
@@ -67,6 +84,28 @@ describe('PrimitiveValue', () => {
       expect(arr).toHaveLength(2);
       expect(arr[0].getValue()).toBe(1);
       expect(arr[1].getValue()).toBe(2);
+    });
+
+    it('should keep quoted items as explicit strings', () => {
+      const arr = PrimitiveValue.converterArray('("123",456)');
+      expect(arr).toHaveLength(2);
+      expect(arr[0].getValue()).toBe('123');
+      expect(arr[0].isString()).toBe(true);
+      expect(arr[1].getValue()).toBe(456);
+    });
+
+    it('should keep explicitly quoted empty strings in array', () => {
+      const arr = PrimitiveValue.converterArray('("",abc)');
+      expect(arr).toHaveLength(2);
+      expect(arr[0].getValue()).toBe('');
+      expect(arr[1].getValue()).toBe('abc');
+    });
+
+    it('should keep unbalanced quotes as literal characters', () => {
+      const arr = PrimitiveValue.converterArray('("abc,def\')');
+      expect(arr).toHaveLength(2);
+      expect(arr[0].getValue()).toBe('"abc');
+      expect(arr[1].getValue()).toBe("def'");
     });
   });
 

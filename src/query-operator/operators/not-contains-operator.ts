@@ -1,6 +1,7 @@
 import type { Nullable } from '@raicampos/toolkit';
 import type { NotContainsCondition } from '../../common/types';
 import { PrimitiveValue } from '../../common/types/primitive-value';
+import { ensureQuoted } from '../../common/types/quoted-string';
 import type { OperatorVisitor } from '../../converters';
 import type { QueryParamsOperatorSafeParse } from '../query-params-operator';
 import { QueryParamsOperator } from '../query-params-operator';
@@ -10,7 +11,9 @@ export class NotContainsOperator extends QueryParamsOperator<NotContainsConditio
 
   constructor(params: string) {
     super('!~=', params);
-    this.stateValue = PrimitiveValue.converter(this.getRawValue().trim());
+    // Envolve em aspas para forçar a interpretação como string (ex: "12345").
+    const raw = ensureQuoted(this.getRawValue().trim());
+    this.stateValue = PrimitiveValue.converter(raw);
   }
 
   safeParse(): QueryParamsOperatorSafeParse<string> {

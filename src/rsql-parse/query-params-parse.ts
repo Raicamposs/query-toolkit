@@ -1,6 +1,6 @@
 import { coalesce, isEmpty, ObjectEntries } from '@raicampos/toolkit';
 import type { SortDirection } from '../common';
-import { ClassicPage, CursorPage, SortParser } from '../common';
+import { ClassicPage, CursorPage, ensureQuoted, SortParser } from '../common';
 import type {
   CustomValidators,
   FieldCondition,
@@ -229,9 +229,26 @@ export class QueryParamsParse<T extends object> {
       const isBoolean = expectedType === 'boolean';
 
       const normalizeValue = (val: string): string => {
-        if (!isBoolean) return val;
-        const normalized = normalizeRsqlBooleanString(val);
-        return normalized !== val ? normalized : normalizePlainBoolean(val);
+        if (expectedType === 'string') {
+          const { symbol, rawValue } = OperatorRegistry.extractSymbolAndValue(val);
+          if (rawValue) {
+            // Se for uma lista RSQL (ex: (1,2,3)), envolve cada item em aspas
+            if (rawValue.startsWith('(') && rawValue.endsWith(')')) {
+              const inner = rawValue.slice(1, -1);
+              const quotedItems = inner.split(',').map((i) => ensureQuoted(i.trim()));
+              return `${symbol}(${quotedItems.join(',')})`;
+            }
+
+            return `${symbol}${ensureQuoted(rawValue)}`;
+          }
+        }
+
+        if (isBoolean) {
+          const normalized = normalizeRsqlBooleanString(val);
+          return normalized !== val ? normalized : normalizePlainBoolean(val);
+        }
+
+        return val;
       };
 
       if (Array.isArray(value)) {

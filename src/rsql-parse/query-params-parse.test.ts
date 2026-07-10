@@ -248,6 +248,37 @@ describe('QueryParamsParse', () => {
     });
   });
 
+  describe('Coerção de Strings baseada no Schema', () => {
+    interface StringTest {
+      documento: string;
+      tags: string;
+    }
+
+    it('deve forçar valores puramente numéricos a se tornarem strings quando o schema esperar string', () => {
+      const shape = { documento: 'string', tags: 'string' } as const;
+
+      // Valor numérico simples sem aspas
+      const parser1 = new QueryParamsParse<StringTest>({ documento: '==12312' }, shape);
+      expect(parser1.validate().success).toBe(true);
+      expect(parser1.asRsqlOperatorsObject().documento).toEqual({ equals: '12312' });
+
+      // InOperator com lista de números sem aspas
+      const parser2 = new QueryParamsParse<StringTest>({ tags: 'in=(123,456)' }, shape);
+      expect(parser2.validate().success).toBe(true);
+      expect(parser2.asRsqlOperatorsObject().tags).toEqual({ in: ['123', '456'] });
+    });
+
+    it('deve preservar a compatibilidade mantendo a conversão para número se nenhum schema for passado', () => {
+      // Sem passar um shape schema
+      const parser1 = new QueryParamsParse<any>({ id: '==12345' });
+      // A biblioteca historicamente convertia para number, e deve continuar fazendo isso
+      expect(parser1.asRsqlOperatorsObject().id).toEqual({ equals: 12345 });
+
+      const parser2 = new QueryParamsParse<any>({ categoryId: 'in=(10,20)' });
+      expect(parser2.asRsqlOperatorsObject().categoryId).toEqual({ in: [10, 20] });
+    });
+  });
+
   describe('Validação Personalizada (Custom Validators)', () => {
     it('deve validar com sucesso se o validador personalizado retornar true ou void', () => {
       const shape = { age: 'number' } as const;

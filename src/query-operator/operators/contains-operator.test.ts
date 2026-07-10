@@ -23,4 +23,16 @@ describe('ContainsOperator', () => {
     expect(visitor.visitContains).toHaveBeenCalledWith(operator, 'name');
     expect(result).toBe('contains-visited');
   });
+
+  it('deve forçar a conversão de valores puramente numéricos para string', () => {
+    // Mesmo sem aspas, o ContainsOperator deve envolver com aspas para forçar a string
+    const operator1 = new ContainsOperator('~=12345');
+    expect(operator1.safeParse().success).toBe(true);
+    expect(operator1.value()).toBe('12345');
+
+    // Com aspas já existentes, deve mantê-las e tratá-las corretamente como string
+    const operator2 = new ContainsOperator('~="67890"');
+    expect(operator2.safeParse().success).toBe(true);
+    expect(operator2.value()).toBe('67890');
+  });
 });
