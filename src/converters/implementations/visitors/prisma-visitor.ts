@@ -30,7 +30,7 @@ export type PrismaWhereValue =
   | { lt: number | Date | null | undefined }
   | { lte: number | Date | null | undefined }
   | { contains: string; mode: 'insensitive' }
-  | { not: { contains: string; mode: 'insensitive' } }
+  | { not: { contains: string }; mode: 'insensitive' }
   | { gte: number | Date; lte: number | Date }
   | { hasEvery: PrimitiveValueType[] }
   | { hasSome: PrimitiveValueType[] }
@@ -91,8 +91,8 @@ export class PrismaVisitor extends BaseOperatorVisitor<PrismaWhereClause> {
       [field]: {
         not: {
           contains: operator.value() as string,
-          mode: 'insensitive',
         },
+        mode: 'insensitive',
       },
     };
   }

@@ -70,9 +70,11 @@ describe('PrismaVisitor', () => {
   });
 
   it('should visit not contains', () => {
+    // `mode` precisa ser irmão de `not`, não aninhado dentro dele — o Prisma
+    // não aceita `mode` em `NestedStringFilter` (ver Prisma StringFilter).
     const op = new NotContainsOperator('!~=val');
     expect(visitor.visitNotContains(op, 'field')).toEqual({
-      field: { not: { contains: 'val', mode: 'insensitive' } },
+      field: { not: { contains: 'val' }, mode: 'insensitive' },
     });
   });
 
