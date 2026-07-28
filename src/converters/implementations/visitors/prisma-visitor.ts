@@ -20,21 +20,39 @@ import { UnsupportedOperatorError } from '../../core/unsupported-operator-error'
 
 export type PrismaScalar = PrimitiveValueType | null | undefined;
 
+/** Filtro de igualdade negada: campo !== valor escalar */
+type PrismaNotEquals = { not: PrismaScalar };
+
+/** Filtro de busca textual case-insensitive: campo ILIKE '%valor%' */
+type PrismaContains = { contains: string; mode: 'insensitive' };
+
+/**
+ * Filtro de exclusão textual case-insensitive: campo NOT ILIKE '%valor%'
+ * Nota: `mode` deve ser irmão de `not`, não aninhado dentro dele
+ * (Prisma não aceita `mode` em NestedStringFilter).
+ */
+type PrismaNotContains = { not: { contains: string }; mode: 'insensitive' };
+
+/** Filtro de intervalo numérico ou de datas */
+type PrismaBetween = { gte: number | Date; lte: number | Date };
+
+/** Filtros de array */
+type PrismaArrayFilter =
+  { hasEvery: PrimitiveValueType[] } | { hasSome: PrimitiveValueType[] } | { has: PrismaScalar };
+
 export type PrismaWhereValue =
   | PrismaScalar
-  | { not: PrismaScalar }
+  | PrismaNotEquals
+  | PrismaContains
+  | PrismaNotContains
+  | PrismaBetween
+  | PrismaArrayFilter
   | { in: PrimitiveValueType[] }
   | { notIn: PrimitiveValueType[] }
   | { gt: number | Date | null | undefined }
   | { gte: number | Date | null | undefined }
   | { lt: number | Date | null | undefined }
-  | { lte: number | Date | null | undefined }
-  | { contains: string; mode: 'insensitive' }
-  | { not: { contains: string }; mode: 'insensitive' }
-  | { gte: number | Date; lte: number | Date }
-  | { hasEvery: PrimitiveValueType[] }
-  | { hasSome: PrimitiveValueType[] }
-  | { has: PrismaScalar };
+  | { lte: number | Date | null | undefined };
 
 export type PrismaWhereClause = Record<string, PrismaWhereValue>;
 
