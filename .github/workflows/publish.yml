@@ -21,12 +21,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "22.22.2"
           cache: "npm"
 
-      # npm >= 11 necessário: lockfile gerado com npm 11 e OIDC Trusted Publishing exige >= 11.5.1
+      # npm 12 necessário: OIDC Trusted Publishing exige >= 11.5.1, npm 12 é a versão estável atual
+      # Pinnar versão exata garante paridade com o lock file gerado localmente
       - name: Atualizar npm
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.16.0
 
       - name: Instalar Dependências
         run: npm ci
@@ -51,7 +52,7 @@ jobs:
       - name: Setup Auth para GitHub Packages
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "22.22.2"
           registry-url: "https://npm.pkg.github.com"
           scope: "@raicampos"
 
