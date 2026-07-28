@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.12] - 2026-07-28
+
+### Fixed
+- `PrismaVisitor.visitNotContains`: `mode: 'insensitive'` estava aninhado dentro de `not`, onde o Prisma não o aceita (`NestedStringFilter`). Movido para ser irmão de `not` no `StringFilter` pai — correção de bug silencioso que tornava a busca case-sensitive
+
+### Changed
+- `PrismaWhereValue`: tipos anônimos da union extraídos para tipos nomeados (`PrismaNotEquals`, `PrismaContains`, `PrismaNotContains`, `PrismaBetween`, `PrismaArrayFilter`) para melhorar legibilidade e extensibilidade
+
+### Tests
+- Testes do `PrismaVisitor` reorganizados em blocos `describe` por responsabilidade
+- Adicionados testes de regressão estrutural do bug `!~=` (garantem que `mode` não regride para dentro de `not`)
+- Adicionados testes de paridade entre `visitContains` e `visitNotContains`, valores extremos e casos limite
+- Cobertura expandida de 19 para 27 testes
+
+### CI
+- Workflows alinhados para Node.js 22.x
+- Variáveis de ambiente para SHAs do commitlint (prevenção de shell injection)
+- `test-and-lint` agora depende de `commitlint` via `needs`
+- Merge commits ignorados pelo commitlint automaticamente
+- Hooks do Husky corrigidos (line endings LF, `pre-commit` com `vitest --changed`)
+
 ## [1.1.5] - 2026-06-09
 
 ### Fixed
