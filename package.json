@@ -92,7 +92,8 @@
   "homepage": "https://github.com/Raicamposs/query-toolkit#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
-    "access": "public"
+    "access": "public",
+    "provenance": "true"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.0",

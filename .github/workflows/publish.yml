@@ -47,7 +47,7 @@ jobs:
       # Autenticação via OIDC Trusted Publishing (sem token).
       # Requer Trusted Publisher configurado no npmjs.com apontando para publish.yml
       - name: Deploy para NPMJS
-        run: npm publish --access public --ignore-scripts --loglevel=http
+        run: npm publish --access public --ignore-scripts --loglevel=verbose
 
       - name: Setup Auth para GitHub Packages
         uses: actions/setup-node@v4
