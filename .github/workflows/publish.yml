@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.22.2"
+          node-version: "22.x"
           cache: "npm"
 
       # npm 12 necessário: OIDC Trusted Publishing exige >= 11.5.1, npm 12 é a versão estável atual
@@ -52,7 +52,7 @@ jobs:
       - name: Setup Auth para GitHub Packages
         uses: actions/setup-node@v4
         with:
-          node-version: "22.22.2"
+          node-version: "22.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@raicampos"
 
