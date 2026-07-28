@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
           cache: npm
 
       - name: Instalar dependências
@@ -31,20 +31,27 @@ jobs:
 
       - name: Validate push commits with commitlint
         if: github.event_name == 'push'
+        env:
+          FROM_SHA: ${{ github.event.before }}
+          TO_SHA: ${{ github.event.after }}
         run: |
-          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+          if [ "$FROM_SHA" = "0000000000000000000000000000000000000000" ]; then
             npx commitlint --last --verbose
           else
-            npx commitlint --from ${{ github.event.before }} --to ${{ github.event.after }} --verbose
+            npx commitlint --from "$FROM_SHA" --to "$TO_SHA" --verbose
           fi
 
       - name: Validate PR commits with commitlint
         if: github.event_name == 'pull_request'
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
   test-and-lint:
     name: Lint & Test Verification
     runs-on: ubuntu-latest
+    needs: commitlint
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
@@ -52,7 +59,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
           cache: "npm"
 
       - name: Instalar dependências

@@ -56,6 +56,7 @@ jobs:
           scope: "@raicampos"
 
       - name: Deploy para GitHub Packages
+        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish --registry=https://npm.pkg.github.com --ignore-scripts
