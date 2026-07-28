@@ -1,0 +1,31 @@
+name: Publish to JSR
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish-jsr:
+    name: Publish to JSR Registry
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Sync JSR version with package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          node -e "const fs = require('fs'); const j = JSON.parse(fs.readFileSync('jsr.json')); j.version = '$VERSION'; fs.writeFileSync('jsr.json', JSON.stringify(j, null, 2));"
+
+      - name: Publish to JSR
+        run: npx jsr publish --allow-dirty
