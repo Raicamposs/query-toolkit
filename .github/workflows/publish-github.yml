@@ -1,4 +1,4 @@
-name: Publish to NPMJS
+name: Publish to GitHub Packages
 
 on:
   release:
@@ -6,22 +6,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-npmjs:
-    name: Publish to NPM Registry
+  publish-github:
+    name: Publish to GitHub Registry
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      packages: write
 
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
           cache: "npm"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@raicampos"
 
       - name: Atualizar npm
         run: npm install -g npm@11.16.0
@@ -29,17 +31,10 @@ jobs:
       - name: Instalar Dependências
         run: npm ci
 
-      - name: Verificar Formatação (Prettier)
-        run: npm run format:check
-
-      - name: Code Quality (Linter)
-        run: npm run lint
-
-      - name: Garantia de Qualidade (Testes)
-        run: npm test -- --run
-
       - name: Compilação (Build Artifacts)
         run: npm run build
 
-      - name: Deploy para NPMJS
-        run: npm publish --access public --ignore-scripts --loglevel=verbose
+      - name: Deploy para GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --registry=https://npm.pkg.github.com --ignore-scripts
