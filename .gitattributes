@@ -30,6 +30,7 @@
 .gitattributes    eol=lf
 .eslintignore     eol=lf
 .prettierignore   eol=lf
+.husky/*          eol=lf
 
 # These files are binary and should be left untouched
 # (binary is a macro for -text -diff)
